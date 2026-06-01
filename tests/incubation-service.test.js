@@ -61,6 +61,26 @@ test("answerCurrentQuestion copies selected options from caller input", () => {
   assert.deepEqual(nextSession.answers[0].selectedOptions, [currentQuestion.options[0]]);
 });
 
+test("answerCurrentQuestion copies existing answers into the next session", () => {
+  let session = createIncubationSession("我想做一个 AI 选题工具");
+  const firstQuestion = getCurrentQuestion(session);
+  session = answerCurrentQuestion(session, {
+    selectedOptions: [firstQuestion.options[0]],
+    customInput: "先服务内容创作者"
+  });
+  const secondQuestion = getCurrentQuestion(session);
+
+  const nextSession = answerCurrentQuestion(session, {
+    selectedOptions: [secondQuestion.options[0]],
+    customInput: "减少重复劳动"
+  });
+  session.answers[0].selectedOptions.push("后来修改的旧选项");
+  session.answers[0].customInput = "后来修改的旧输入";
+
+  assert.deepEqual(nextSession.answers[0].selectedOptions, [firstQuestion.options[0]]);
+  assert.equal(nextSession.answers[0].customInput, "先服务内容创作者");
+});
+
 test("goToPreviousQuestion removes the last answer and moves index back", () => {
   let session = createIncubationSession("我想做一个项目 PRD 生成工具");
   const firstQuestion = getCurrentQuestion(session);
@@ -73,6 +93,38 @@ test("goToPreviousQuestion removes the last answer and moves index back", () => 
 
   assert.equal(previousSession.answers.length, 0);
   assert.equal(previousSession.currentQuestionIndex, 0);
+});
+
+test("goToPreviousQuestion copies remaining answers", () => {
+  let session = createIncubationSession("我想做一个项目 PRD 生成工具");
+  const firstQuestion = getCurrentQuestion(session);
+  session = answerCurrentQuestion(session, {
+    selectedOptions: [firstQuestion.options[0]],
+    customInput: "先服务小团队"
+  });
+  const secondQuestion = getCurrentQuestion(session);
+  session = answerCurrentQuestion(session, {
+    selectedOptions: [secondQuestion.options[0]],
+    customInput: "提升转化"
+  });
+
+  const previousSession = goToPreviousQuestion(session);
+  previousSession.answers[0].selectedOptions.push("后来修改的返回选项");
+  previousSession.answers[0].customInput = "后来修改的返回输入";
+
+  assert.deepEqual(session.answers[0].selectedOptions, [firstQuestion.options[0]]);
+  assert.equal(session.answers[0].customInput, "先服务小团队");
+});
+
+test("getCurrentQuestion returns a copy of the stored question", () => {
+  const session = createIncubationSession("我想做一个 AI 选题工具");
+  const currentQuestion = getCurrentQuestion(session);
+
+  currentQuestion.options.push("后来追加的选项");
+  currentQuestion.title = "后来修改的标题";
+
+  assert.notEqual(session.questions[0].title, "后来修改的标题");
+  assert.equal(session.questions[0].options.includes("后来追加的选项"), false);
 });
 
 test("canStartResearch is true after all required questions are answered", () => {
