@@ -5,6 +5,15 @@
   </view>
 
   <view class="prompt-panel">
+    <view class="prompt-topline">
+      <view class="prompt-icon">
+        <t-icon name="lightbulb" size="34rpx" color="#ffffff" />
+      </view>
+      <view class="prompt-copy">
+        <view class="prompt-label">输入项目想法</view>
+        <view class="prompt-hint">AI 会继续追问并孵化可落地切入点</view>
+      </view>
+    </view>
     <view class="idea-card">
       <t-chat-sender
         class="idea-sender"
@@ -23,36 +32,53 @@
   </view>
 
   <view class="section">
-    <view class="section-title">示例灵感</view>
+    <view class="section-heading">
+      <t-icon name="compass" size="32rpx" color="#4648d4" />
+      <view class="section-title">示例灵感</view>
+    </view>
     <view class="example-grid">
-      <t-tag
+      <view
         wx:for="{{examples}}"
-        wx:key="*this"
-        t-class="example-chip"
-        theme="primary"
-        variant="light"
-        size="small"
-        max-width="100%"
-        custom-style="background: #ccfbf1; border-color: #ccfbf1; color: #0f766e;"
-        data-value="{{item}}"
-        bind:click="onUseExample"
+        wx:key="text"
+        style="animation-delay: {{index * 50}}ms;"
+        class="example-chip"
+        hover-class="example-chip-active"
+        data-value="{{item.text}}"
+        bind:tap="onUseExample"
       >
-        <t-text t-class="example-text" content="{{item}}" ellipsis="{{true}}" custom-style="display: block; color: #0f766e; font-size: 28rpx; line-height: 28rpx; margin: 0;" />
-      </t-tag>
+        <view class="example-icon">
+          <t-icon name="{{item.icon}}" size="28rpx" color="#4648d4" />
+        </view>
+        <view class="example-text">{{item.text}}</view>
+      </view>
     </view>
   </view>
 
   <view class="section">
-    <view class="section-title">最近孵化</view>
+    <view class="section-heading">
+      <t-icon name="rocket" size="32rpx" color="#4648d4" />
+      <view class="section-title">最近孵化</view>
+    </view>
     <block wx:if="{{recentProjects.length}}">
-      <view wx:for="{{recentProjects}}" wx:key="id" class="recent-card">
-        <view class="recent-title">{{item.title}}</view>
-        <view class="recent-text">{{item.conclusion}}</view>
-        <view class="recent-meta">{{item.createdAtText}}</view>
+      <view wx:for="{{recentProjects}}" wx:key="id" class="recent-card" style="animation-delay: {{index * 60}}ms;">
+        <view class="recent-title-row">
+          <view class="recent-icon">
+            <t-icon name="rocket" size="28rpx" color="#4648d4" />
+          </view>
+          <view class="recent-title">{{item.title}}</view>
+        </view>
+        <view class="recent-text-row">
+          <t-icon name="flag" size="24rpx" color="#767586" />
+          <view class="recent-text">{{item.conclusion}}</view>
+        </view>
+        <view class="recent-meta">
+          <t-icon name="time" size="22rpx" color="#9a98a8" />
+          <text>{{item.createdAtText}}</text>
+        </view>
       </view>
     </block>
     <view wx:else class="empty-state">
-      <t-icon name="time" size="36rpx" color="#94a3b8" />
+      <t-icon name="time" size="36rpx" color="#767586" />
       <t-text t-class="empty-text" theme="secondary" content="最近暂无孵化" custom-style="display: block;" />
     </view>
   </view>

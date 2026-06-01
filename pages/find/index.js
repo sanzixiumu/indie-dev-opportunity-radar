@@ -88,13 +88,13 @@ Page({
   data: {
     ideaInput: "",
     examples: [
-      "小红书选题助手",
-      "自由职业报价",
-      "项目 PRD 生成",
-      "商家会员小程序",
+      { text: "小红书选题助手", icon: "book-open" },
+      { text: "自由职业报价", icon: "money" },
+      { text: "项目 PRD 生成", icon: "file-edit" },
+      { text: "商家会员小程序", icon: "shop" },
     ],
     ideaSenderPresets: [{ name: "send", type: "icon" }],
-    ideaSenderTextareaProps: { autosize: { minHeight: 72, maxHeight: 180 } },
+    ideaSenderTextareaProps: { autosize: { minHeight: 164, maxHeight: 260 } },
     recentProjects: [],
     modalVisible: false,
     modalStage: "question",
