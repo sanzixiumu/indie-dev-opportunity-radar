@@ -9,6 +9,7 @@ const {
 const {
   createGeneratedProjectStore,
 } = require("../../lib/generated-project-store");
+const { withFormattedCreatedAt } = require("../../lib/display-format");
 const ToastModule = require("tdesign-miniprogram/toast/index");
 
 const showToast = ToastModule.default || ToastModule.showToast || ToastModule;
@@ -43,6 +44,44 @@ function isLastQuestion(session) {
 
 function canGoPrevious(session) {
   return Boolean(session) && session.currentQuestionIndex > 0;
+}
+
+function createOptionItems(question, selectedOptions) {
+  if (!question) {
+    return [];
+  }
+
+  return question.options.map((label) => ({
+    label,
+    selected: selectedOptions.indexOf(label) > -1,
+  }));
+}
+
+function createQuestionAnswerState(question, answer) {
+  const selectedOptions = answer ? (answer.selectedOptions || []).slice() : [];
+  const customInput = answer ? answer.customInput || "" : "";
+
+  return {
+    selectedOptions,
+    currentOptions: createOptionItems(question, selectedOptions),
+    customInput,
+  };
+}
+
+function createQuestionSessionState(session, answer) {
+  const currentQuestion = getCurrentQuestion(session);
+
+  return Object.assign(createQuestionAnswerState(currentQuestion, answer), {
+    session,
+    currentQuestion,
+    canStartResearch: canStartResearch(session),
+    isLastQuestion: isLastQuestion(session),
+    canGoPrevious: canGoPrevious(session),
+  });
+}
+
+function createFreshSessionState(idea) {
+  return createQuestionSessionState(createIncubationSession(idea));
 }
 
 Page({
@@ -87,7 +126,10 @@ Page({
   },
 
   refreshRecentProjects() {
-    const recentProjects = this.projectStore.getProjects().slice(0, 3);
+    const recentProjects = this.projectStore
+      .getProjects()
+      .slice(0, 3)
+      .map(withFormattedCreatedAt);
     this.setData({ recentProjects });
   },
 
@@ -118,21 +160,11 @@ Page({
 
     this.stopResearchProgress();
 
-    const session = createIncubationSession(idea);
-    const currentQuestion = getCurrentQuestion(session);
-
     this.setData({
       modalVisible: true,
       modalStage: "question",
       stageText: "正在补充关键信息",
-      session,
-      currentQuestion,
-      selectedOptions: [],
-      currentOptions: this.createOptionItems(currentQuestion, []),
-      customInput: "",
-      canStartResearch: canStartResearch(session),
-      isLastQuestion: isLastQuestion(session),
-      canGoPrevious: canGoPrevious(session),
+      ...createFreshSessionState(idea),
       activeResearchStep: 0,
       completedResearchSteps: [],
       researchStepItems: createResearchStepItems(0, []),
@@ -141,14 +173,7 @@ Page({
   },
 
   createOptionItems(question, selectedOptions) {
-    if (!question) {
-      return [];
-    }
-
-    return question.options.map((label) => ({
-      label,
-      selected: selectedOptions.indexOf(label) > -1,
-    }));
+    return createOptionItems(question, selectedOptions);
   },
 
   onCloseModal() {
@@ -205,23 +230,33 @@ Page({
     });
   },
 
+  onModalIdeaInput(event) {
+    const ideaInput = event.detail.value.trimStart();
+
+    this.stopResearchProgress();
+    this.setData({
+      ideaInput,
+      modalStage: "question",
+      stageText: "正在补充关键信息",
+      ...createFreshSessionState(ideaInput),
+      activeResearchStep: 0,
+      completedResearchSteps: [],
+      researchStepItems: createResearchStepItems(0, []),
+      generatedProject: null,
+    });
+  },
+
   onPreviousQuestion() {
     if (!this.data.canGoPrevious) {
       return;
     }
 
+    const answerToRestore =
+      this.data.session.answers[this.data.session.answers.length - 1];
     const previousSession = goToPreviousQuestion(this.data.session);
-    const currentQuestion = getCurrentQuestion(previousSession);
 
     this.setData({
-      session: previousSession,
-      currentQuestion,
-      selectedOptions: [],
-      currentOptions: this.createOptionItems(currentQuestion, []),
-      customInput: "",
-      canStartResearch: canStartResearch(previousSession),
-      isLastQuestion: isLastQuestion(previousSession),
-      canGoPrevious: canGoPrevious(previousSession),
+      ...createQuestionSessionState(previousSession, answerToRestore),
     });
   },
 
@@ -255,17 +290,8 @@ Page({
       return;
     }
 
-    const nextQuestion = getCurrentQuestion(nextSession);
-
     this.setData({
-      session: nextSession,
-      currentQuestion: nextQuestion,
-      selectedOptions: [],
-      currentOptions: this.createOptionItems(nextQuestion, []),
-      customInput: "",
-      canStartResearch: canStartResearch(nextSession),
-      isLastQuestion: isLastQuestion(nextSession),
-      canGoPrevious: canGoPrevious(nextSession),
+      ...createQuestionSessionState(nextSession),
     });
   },
 
@@ -341,22 +367,14 @@ Page({
   },
 
   onModifyDirection() {
-    const editableSession = canStartResearch(this.data.session)
-      ? goToPreviousQuestion(this.data.session)
-      : this.data.session;
-    const currentQuestion = getCurrentQuestion(editableSession);
+    const idea =
+      this.data.ideaInput || (this.data.session && this.data.session.idea);
 
+    this.stopResearchProgress();
     this.setData({
-      session: editableSession,
       modalStage: "question",
       stageText: "正在补充关键信息",
-      currentQuestion,
-      selectedOptions: [],
-      currentOptions: this.createOptionItems(currentQuestion, []),
-      customInput: "",
-      canStartResearch: canStartResearch(editableSession),
-      isLastQuestion: isLastQuestion(editableSession),
-      canGoPrevious: canGoPrevious(editableSession),
+      ...createFreshSessionState(idea),
       generatedProject: null,
     });
   },

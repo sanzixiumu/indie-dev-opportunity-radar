@@ -133,6 +133,7 @@
   box-sizing: border-box;
 }
 
+.idea-edit-card,
 .question-card,
 .progress-card,
 .result-card {
@@ -140,6 +141,21 @@
   border: 1rpx solid #e5e7eb;
   border-radius: 16rpx;
   background: #ffffff;
+}
+
+.idea-edit-card {
+  margin-bottom: 20rpx;
+}
+
+.idea-edit-title {
+  margin-bottom: 14rpx;
+  color: #111827;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.modal-idea-input {
+  min-height: 120rpx;
 }
 
 .question-title,

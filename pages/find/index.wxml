@@ -15,7 +15,7 @@
       indicator="{{true}}"
       bind:change="onIdeaInput"
     />
-    <t-button block theme="primary" size="large" disabled="{{!ideaInput}}" bind:click="onStartIncubation">开始孵化</t-button>
+    <t-button block theme="primary" size="large" disabled="{{!ideaInput}}" bind:tap="onStartIncubation">开始孵化</t-button>
   </view>
 
   <view class="section">
@@ -33,7 +33,7 @@
       <view wx:for="{{recentProjects}}" wx:key="id" class="recent-card">
         <view class="recent-title">{{item.title}}</view>
         <view class="recent-text">{{item.conclusion}}</view>
-        <view class="recent-meta">{{item.createdAt}}</view>
+        <view class="recent-meta">{{item.createdAtText}}</view>
       </view>
     </block>
     <t-empty wx:else description="孵化完成的项目会保存到工作台。" />
@@ -52,7 +52,7 @@
   bind:visible-change="onModalVisibleChange"
 >
   <view class="modal-header">
-    <t-button shape="circle" theme="default" variant="text" bind:click="onCloseModal">
+    <t-button shape="circle" theme="default" variant="text" bind:tap="onCloseModal">
       <t-icon name="close" size="40rpx" />
     </t-button>
     <view class="modal-title-wrap">
@@ -67,6 +67,18 @@
 
   <scroll-view class="modal-body" scroll-y="true">
     <block wx:if="{{modalStage === 'question' && currentQuestion}}">
+      <view class="idea-edit-card">
+        <view class="idea-edit-title">项目想法</view>
+        <t-textarea
+          t-class="modal-idea-input"
+          value="{{ideaInput}}"
+          placeholder="调整你的项目方向"
+          maxlength="300"
+          autosize="{{true}}"
+          indicator="{{true}}"
+          bind:change="onModalIdeaInput"
+        />
+      </view>
       <view class="question-card">
         <view class="question-title">{{currentQuestion.title}}</view>
         <view class="question-desc">{{currentQuestion.description}}</view>
@@ -155,15 +167,15 @@
 
   <view class="modal-actions">
     <block wx:if="{{modalStage === 'question'}}">
-      <t-button t-class="secondary-button" theme="default" variant="outline" disabled="{{!canGoPrevious}}" bind:click="onPreviousQuestion">上一步</t-button>
-      <t-button t-class="action-primary" theme="primary" bind:click="onNextQuestion">
+      <t-button t-class="secondary-button" theme="default" variant="outline" disabled="{{!canGoPrevious}}" bind:tap="onPreviousQuestion">上一步</t-button>
+      <t-button t-class="action-primary" theme="primary" bind:tap="onNextQuestion">
         {{isLastQuestion ? '开始调研市场' : '下一步'}}
       </t-button>
     </block>
     <block wx:if="{{modalStage === 'result'}}">
-      <t-button t-class="secondary-button" theme="default" variant="outline" bind:click="onRegenerate">重新生成</t-button>
-      <t-button t-class="secondary-button" theme="default" variant="outline" bind:click="onModifyDirection">修改方向</t-button>
-      <t-button t-class="action-primary" theme="primary" bind:click="onConfirmDirection">确定方向</t-button>
+      <t-button t-class="secondary-button" theme="default" variant="outline" bind:tap="onRegenerate">重新生成</t-button>
+      <t-button t-class="secondary-button" theme="default" variant="outline" bind:tap="onModifyDirection">修改方向</t-button>
+      <t-button t-class="action-primary" theme="primary" bind:tap="onConfirmDirection">确定方向</t-button>
     </block>
   </view>
 </t-popup>

@@ -11,15 +11,15 @@
       </view>
       <view class="project-text">{{item.conclusion}}</view>
       <view class="project-text entry-text">{{item.entryDirection}}</view>
-      <view class="project-meta">{{item.createdAt}}</view>
+      <view class="project-meta">{{item.createdAtText}}</view>
       <view class="project-actions" catchtap="noop">
-        <t-button t-class="project-action" size="small" theme="{{item.favoriteStatus ? 'primary' : 'default'}}" variant="{{item.favoriteStatus ? 'base' : 'outline'}}" data-id="{{item.id}}" catch:click="onToggleFavorite">
+        <t-button t-class="project-action" size="small" theme="{{item.favoriteStatus ? 'primary' : 'default'}}" variant="{{item.favoriteStatus ? 'base' : 'outline'}}" data-id="{{item.id}}" catch:tap="onToggleFavorite">
           {{item.favoriteStatus ? '已收藏' : '收藏'}}
         </t-button>
-        <t-button t-class="project-action" size="small" theme="{{item.compareStatus ? 'primary' : 'default'}}" variant="{{item.compareStatus ? 'base' : 'outline'}}" data-id="{{item.id}}" catch:click="onToggleCompare">
+        <t-button t-class="project-action" size="small" theme="{{item.compareStatus ? 'primary' : 'default'}}" variant="{{item.compareStatus ? 'base' : 'outline'}}" data-id="{{item.id}}" catch:tap="onToggleCompare">
           {{item.compareStatus ? '已对比' : '对比'}}
         </t-button>
-        <t-button t-class="project-action prd-action" size="small" theme="primary" catch:click="onGeneratePrd">生成PRD</t-button>
+        <t-button t-class="project-action prd-action" size="small" theme="primary" catch:tap="onGeneratePrd">生成PRD</t-button>
       </view>
     </view>
   </block>
@@ -42,7 +42,7 @@
   bind:visible-change="onDetailVisibleChange"
 >
   <view class="detail-header">
-    <t-button shape="circle" theme="default" variant="text" bind:click="onCloseDetail">
+    <t-button shape="circle" theme="default" variant="text" bind:tap="onCloseDetail">
       <t-icon name="close" size="40rpx" />
     </t-button>
     <view class="detail-title">项目详情</view>

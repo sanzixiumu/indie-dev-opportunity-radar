@@ -1,6 +1,7 @@
 const {
   createGeneratedProjectStore,
 } = require("../../lib/generated-project-store");
+const { withFormattedCreatedAt } = require("../../lib/display-format");
 const ToastModule = require("tdesign-miniprogram/toast/index");
 
 const showToast = ToastModule.default || ToastModule.showToast || ToastModule;
@@ -25,7 +26,7 @@ Page({
 
   refreshProjects() {
     this.setData({
-      projects: this.projectStore.getProjects(),
+      projects: this.projectStore.getProjects().map(withFormattedCreatedAt),
     });
   },
 
