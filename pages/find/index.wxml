@@ -1,13 +1,45 @@
-<view class="page">
-  <view class="eyebrow">PROJECT MATCH</view>
-  <view class="title">找到适合你做的项目</view>
-  <view class="subtitle">根据技能栈、团队规模、预算和可投入时间，生成适合独立开发者的项目机会卡。</view>
+<view class="page find-page">
+  <view class="hero">
+    <view class="eyebrow">AI IDEA INCUBATION</view>
+    <view class="title">灵感孵化</view>
+    <view class="subtitle">输入一个项目想法，AI 会追问关键信息，并调研国内外产品，帮你找到可切入方向。</view>
+  </view>
 
-  <view class="panel">
-    <view class="panel-title">第一阶段功能</view>
-    <view class="panel-text">这里会整合画像问卷、AI 推荐和机会卡详情，作为小程序的主入口。</view>
-    <view class="pill-row">
-      <view wx:for="{{tags}}" wx:key="*this" class="pill">{{item}}</view>
+  <view class="idea-card">
+    <t-textarea
+      t-class="idea-input"
+      value="{{ideaInput}}"
+      placeholder="例如：我想做一个帮独立开发者找项目方向的小工具"
+      maxlength="300"
+      autosize="{{true}}"
+      indicator="{{true}}"
+      bind:change="onIdeaInput"
+    />
+    <t-button block theme="primary" size="large" disabled="{{!ideaInput}}" bind:tap="onStartIncubation">开始孵化</t-button>
+  </view>
+
+  <view class="section">
+    <view class="section-title">示例灵感</view>
+    <view class="example-grid">
+      <t-tag wx:for="{{examples}}" wx:key="*this" class="example-chip" theme="primary" variant="light" size="large" data-value="{{item}}" bind:click="onUseExample">
+        {{item}}
+      </t-tag>
     </view>
   </view>
+
+  <view class="section">
+    <view class="section-title">最近孵化</view>
+    <block wx:if="{{recentProjects.length}}">
+      <view wx:for="{{recentProjects}}" wx:key="id" class="recent-card">
+        <view class="recent-title">{{item.title}}</view>
+        <view class="recent-text">{{item.conclusion}}</view>
+        <view class="recent-meta">{{item.createdAt}}</view>
+      </view>
+    </block>
+    <t-empty wx:else description="孵化完成的项目会保存到工作台。" />
+  </view>
+
+  <view class="ai-note">市场调研结果由 AI 生成，请结合真实数据进一步验证。</view>
 </view>
+
+<t-toast id="t-toast" />

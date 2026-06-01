@@ -1,1 +1,78 @@
+.find-page {
+  padding-bottom: 96rpx;
+}
 
+.hero {
+  margin-bottom: 30rpx;
+}
+
+.idea-card {
+  padding: 28rpx;
+  border: 1rpx solid #e5e7eb;
+  border-radius: 16rpx;
+  background: #ffffff;
+}
+
+.idea-input {
+  margin-bottom: 24rpx;
+}
+
+.section {
+  margin-top: 34rpx;
+}
+
+.section-title {
+  margin-bottom: 16rpx;
+  color: #111827;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.example-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16rpx;
+}
+
+.example-chip {
+  min-height: 72rpx;
+  padding: 14rpx;
+  box-sizing: border-box;
+  white-space: normal;
+}
+
+.recent-card {
+  margin-top: 16rpx;
+  padding: 22rpx;
+  border: 1rpx solid #e5e7eb;
+  border-radius: 14rpx;
+  background: #ffffff;
+}
+
+.recent-title {
+  color: #111827;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.recent-text,
+.empty-line,
+.ai-note {
+  color: #6b7280;
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+
+.recent-text {
+  margin-top: 8rpx;
+}
+
+.recent-meta {
+  margin-top: 10rpx;
+  color: #9ca3af;
+  font-size: 22rpx;
+}
+
+.ai-note {
+  margin-top: 36rpx;
+}
