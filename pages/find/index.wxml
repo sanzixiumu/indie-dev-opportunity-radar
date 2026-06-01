@@ -15,13 +15,13 @@
       indicator="{{true}}"
       bind:change="onIdeaInput"
     />
-    <t-button block theme="primary" size="large" disabled="{{!ideaInput}}" bind:tap="onStartIncubation">开始孵化</t-button>
+    <t-button block theme="primary" size="large" disabled="{{!ideaInput}}" bind:click="onStartIncubation">开始孵化</t-button>
   </view>
 
   <view class="section">
     <view class="section-title">示例灵感</view>
     <view class="example-grid">
-      <t-tag wx:for="{{examples}}" wx:key="*this" class="example-chip" theme="primary" variant="light" size="large" data-value="{{item}}" bind:click="onUseExample">
+      <t-tag wx:for="{{examples}}" wx:key="*this" t-class="example-chip" theme="primary" variant="light" size="large" data-value="{{item}}" bind:click="onUseExample">
         {{item}}
       </t-tag>
     </view>
