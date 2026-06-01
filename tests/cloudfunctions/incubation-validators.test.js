@@ -111,6 +111,27 @@ test("normalizeQuestionPayload rejects choice questions without options or custo
   );
 });
 
+test("normalizeQuestionPayload rejects empty questions with AI output contract", () => {
+  assert.throws(
+    () =>
+      normalizeQuestionPayload({
+        initialAssessment: {
+          summary: "用户想做 AI PRD 工具",
+          missingInfo: ["目标用户"],
+          readyForResearch: false,
+        },
+        questions: [],
+      }),
+    (error) => {
+      assert.equal(error.code, "AI_OUTPUT_INVALID");
+      assert.equal(error.type, "ai_output");
+      assert.equal(error.action, "retry");
+      assert.match(error.message, /至少包含一个问题/);
+      return true;
+    },
+  );
+});
+
 test("normalizeAnalysisPayload rejects malformed analysis with AI output contract", () => {
   assert.throws(
     () =>

@@ -142,9 +142,15 @@ function normalizeQuestionPayload(payload) {
     throw aiOutputError("问题生成结果必须是对象");
   }
 
+  const questions = normalizeObjectArray(payload.questions, "questions", normalizeQuestion);
+
+  if (questions.length === 0) {
+    throw aiOutputError("questions 必须至少包含一个问题");
+  }
+
   return {
     initialAssessment: normalizeInitialAssessment(payload.initialAssessment),
-    questions: normalizeObjectArray(payload.questions, "questions", normalizeQuestion),
+    questions,
   };
 }
 
