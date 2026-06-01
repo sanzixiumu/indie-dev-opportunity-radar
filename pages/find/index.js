@@ -88,11 +88,13 @@ Page({
   data: {
     ideaInput: "",
     examples: [
-      "AI 帮我整理小红书选题",
-      "给自由职业者做报价管理工具",
-      "帮程序员快速生成项目 PRD",
-      "面向本地商家的会员小程序",
+      "小红书选题助手",
+      "自由职业报价",
+      "项目 PRD 生成",
+      "商家会员小程序",
     ],
+    ideaSenderPresets: [{ name: "send", type: "icon" }],
+    ideaSenderTextareaProps: { autosize: { minHeight: 72, maxHeight: 180 } },
     recentProjects: [],
     modalVisible: false,
     modalStage: "question",
@@ -145,8 +147,12 @@ Page({
     });
   },
 
-  onStartIncubation() {
-    const idea = this.data.ideaInput.trim();
+  onStartIncubation(event) {
+    const nextIdea =
+      event && event.detail && typeof event.detail.value === "string"
+        ? event.detail.value.trimStart()
+        : this.data.ideaInput;
+    const idea = nextIdea.trim();
 
     if (!idea) {
       showToast({
@@ -161,6 +167,7 @@ Page({
     this.stopResearchProgress();
 
     this.setData({
+      ideaInput: nextIdea,
       modalVisible: true,
       modalStage: "question",
       stageText: "正在补充关键信息",

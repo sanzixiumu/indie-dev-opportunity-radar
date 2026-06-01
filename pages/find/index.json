@@ -3,11 +3,13 @@
   "usingComponents": {
     "t-button": "tdesign-miniprogram/button/button",
     "t-textarea": "tdesign-miniprogram/textarea/textarea",
+    "t-title": "tdesign-miniprogram/title/title",
+    "t-text": "tdesign-miniprogram/text/text",
+    "t-chat-sender": "tdesign-miniprogram/chat-sender/chat-sender",
     "t-popup": "tdesign-miniprogram/popup/popup",
     "t-icon": "tdesign-miniprogram/icon/icon",
     "t-tag": "tdesign-miniprogram/tag/tag",
     "t-loading": "tdesign-miniprogram/loading/loading",
-    "t-empty": "tdesign-miniprogram/empty/empty",
     "t-toast": "tdesign-miniprogram/toast/toast"
   }
 }
