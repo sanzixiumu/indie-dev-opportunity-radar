@@ -5,6 +5,7 @@
   "packageManager": "pnpm@10.14.0",
   "scripts": {
     "test": "node --test tests/*.test.js tests/cloudfunctions/*.test.js",
+    "cloudfunctions:sync-shared": "node scripts/sync-cloud-shared.js",
     "cloudbase:version": "bunx @cloudbase/cli --version",
     "mcp:status": "bunx mcporter call cloudbase.auth action=status --output json",
     "mcp:envs": "bunx mcporter call cloudbase.envQuery action=list --output json",
