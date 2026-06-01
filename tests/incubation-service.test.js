@@ -6,11 +6,12 @@ const {
   answerCurrentQuestion,
   goToPreviousQuestion,
   canStartResearch,
-  generateProjectResult
+  generateProjectResult,
 } = require("../lib/incubation-service");
 
 test("createIncubationSession creates dynamic mobile-friendly questions", () => {
-  const session = createIncubationSession("我想做一个帮自由职业者管理报价的工具");
+  const session =
+    createIncubationSession("我想做一个帮自由职业者管理报价的工具");
 
   assert.equal(session.idea, "我想做一个帮自由职业者管理报价的工具");
   assert.equal(session.answers.length, 0);
@@ -26,7 +27,7 @@ test("answerCurrentQuestion records answers and advances", () => {
 
   const nextSession = answerCurrentQuestion(session, {
     selectedOptions: [currentQuestion.options[0]],
-    customInput: "先服务内容创作者"
+    customInput: "先服务内容创作者",
   });
 
   assert.equal(nextSession.answers.length, 1);
@@ -40,7 +41,7 @@ test("answerCurrentQuestion leaves the original session unchanged", () => {
 
   answerCurrentQuestion(session, {
     selectedOptions: [currentQuestion.options[0]],
-    customInput: "先服务内容创作者"
+    customInput: "先服务内容创作者",
   });
 
   assert.equal(session.answers.length, 0);
@@ -54,11 +55,13 @@ test("answerCurrentQuestion copies selected options from caller input", () => {
 
   const nextSession = answerCurrentQuestion(session, {
     selectedOptions,
-    customInput: "先服务内容创作者"
+    customInput: "先服务内容创作者",
   });
   selectedOptions.push("后来追加的选项");
 
-  assert.deepEqual(nextSession.answers[0].selectedOptions, [currentQuestion.options[0]]);
+  assert.deepEqual(nextSession.answers[0].selectedOptions, [
+    currentQuestion.options[0],
+  ]);
 });
 
 test("answerCurrentQuestion copies existing answers into the next session", () => {
@@ -66,18 +69,20 @@ test("answerCurrentQuestion copies existing answers into the next session", () =
   const firstQuestion = getCurrentQuestion(session);
   session = answerCurrentQuestion(session, {
     selectedOptions: [firstQuestion.options[0]],
-    customInput: "先服务内容创作者"
+    customInput: "先服务内容创作者",
   });
   const secondQuestion = getCurrentQuestion(session);
 
   const nextSession = answerCurrentQuestion(session, {
     selectedOptions: [secondQuestion.options[0]],
-    customInput: "减少重复劳动"
+    customInput: "减少重复劳动",
   });
   session.answers[0].selectedOptions.push("后来修改的旧选项");
   session.answers[0].customInput = "后来修改的旧输入";
 
-  assert.deepEqual(nextSession.answers[0].selectedOptions, [firstQuestion.options[0]]);
+  assert.deepEqual(nextSession.answers[0].selectedOptions, [
+    firstQuestion.options[0],
+  ]);
   assert.equal(nextSession.answers[0].customInput, "先服务内容创作者");
 });
 
@@ -87,11 +92,14 @@ test("answerCurrentQuestion copies questions into the next session", () => {
 
   const nextSession = answerCurrentQuestion(session, {
     selectedOptions: [firstQuestion.options[0]],
-    customInput: "先服务内容创作者"
+    customInput: "先服务内容创作者",
   });
   nextSession.questions[0].options.push("后来修改的问题选项");
 
-  assert.equal(session.questions[0].options.includes("后来修改的问题选项"), false);
+  assert.equal(
+    session.questions[0].options.includes("后来修改的问题选项"),
+    false,
+  );
 });
 
 test("goToPreviousQuestion removes the last answer and moves index back", () => {
@@ -100,7 +108,7 @@ test("goToPreviousQuestion removes the last answer and moves index back", () => 
 
   session = answerCurrentQuestion(session, {
     selectedOptions: [firstQuestion.options[0]],
-    customInput: ""
+    customInput: "",
   });
   const previousSession = goToPreviousQuestion(session);
 
@@ -113,19 +121,21 @@ test("goToPreviousQuestion copies remaining answers", () => {
   const firstQuestion = getCurrentQuestion(session);
   session = answerCurrentQuestion(session, {
     selectedOptions: [firstQuestion.options[0]],
-    customInput: "先服务小团队"
+    customInput: "先服务小团队",
   });
   const secondQuestion = getCurrentQuestion(session);
   session = answerCurrentQuestion(session, {
     selectedOptions: [secondQuestion.options[0]],
-    customInput: "提升转化"
+    customInput: "提升转化",
   });
 
   const previousSession = goToPreviousQuestion(session);
   previousSession.answers[0].selectedOptions.push("后来修改的返回选项");
   previousSession.answers[0].customInput = "后来修改的返回输入";
 
-  assert.deepEqual(session.answers[0].selectedOptions, [firstQuestion.options[0]]);
+  assert.deepEqual(session.answers[0].selectedOptions, [
+    firstQuestion.options[0],
+  ]);
   assert.equal(session.answers[0].customInput, "先服务小团队");
 });
 
@@ -134,18 +144,21 @@ test("goToPreviousQuestion copies questions into the previous session", () => {
   const firstQuestion = getCurrentQuestion(session);
   session = answerCurrentQuestion(session, {
     selectedOptions: [firstQuestion.options[0]],
-    customInput: "先服务小团队"
+    customInput: "先服务小团队",
   });
   const secondQuestion = getCurrentQuestion(session);
   session = answerCurrentQuestion(session, {
     selectedOptions: [secondQuestion.options[0]],
-    customInput: "提升转化"
+    customInput: "提升转化",
   });
 
   const previousSession = goToPreviousQuestion(session);
   previousSession.questions[0].options.push("后来修改的问题选项");
 
-  assert.equal(session.questions[0].options.includes("后来修改的问题选项"), false);
+  assert.equal(
+    session.questions[0].options.includes("后来修改的问题选项"),
+    false,
+  );
 });
 
 test("getCurrentQuestion returns a copy of the stored question", () => {
@@ -166,7 +179,7 @@ test("canStartResearch is true after all required questions are answered", () =>
     const question = getCurrentQuestion(session);
     session = answerCurrentQuestion(session, {
       selectedOptions: [question.options[0]],
-      customInput: ""
+      customInput: "",
     });
   }
 
@@ -174,7 +187,9 @@ test("canStartResearch is true after all required questions are answered", () =>
 });
 
 test("generateProjectResult returns the required structured result", () => {
-  const session = createIncubationSession("我想做一个帮程序员快速生成 PRD 的工具");
+  const session = createIncubationSession(
+    "我想做一个帮程序员快速生成 PRD 的工具",
+  );
   const result = generateProjectResult(session);
 
   assert.ok(result.id.startsWith("project-"));
@@ -189,11 +204,13 @@ test("generateProjectResult returns the required structured result", () => {
 });
 
 test("generateProjectResult copies session answers", () => {
-  let session = createIncubationSession("我想做一个帮程序员快速生成 PRD 的工具");
+  let session = createIncubationSession(
+    "我想做一个帮程序员快速生成 PRD 的工具",
+  );
   const question = getCurrentQuestion(session);
   session = answerCurrentQuestion(session, {
     selectedOptions: [question.options[0]],
-    customInput: "先服务小团队"
+    customInput: "先服务小团队",
   });
 
   const result = generateProjectResult(session);
@@ -202,7 +219,7 @@ test("generateProjectResult copies session answers", () => {
     questionId: "later",
     questionTitle: "later",
     selectedOptions: ["later"],
-    customInput: "later"
+    customInput: "later",
   });
 
   assert.equal(result.answers.length, 1);
@@ -210,7 +227,9 @@ test("generateProjectResult copies session answers", () => {
 });
 
 test("generateProjectResult creates distinct ids for rapid calls", () => {
-  const session = createIncubationSession("我想做一个帮程序员快速生成 PRD 的工具");
+  const session = createIncubationSession(
+    "我想做一个帮程序员快速生成 PRD 的工具",
+  );
   const firstResult = generateProjectResult(session);
   const secondResult = generateProjectResult(session);
 

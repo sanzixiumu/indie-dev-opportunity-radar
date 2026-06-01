@@ -4,9 +4,11 @@ const {
   answerCurrentQuestion,
   goToPreviousQuestion,
   canStartResearch,
-  generateProjectResult
+  generateProjectResult,
 } = require("../../lib/incubation-service");
-const { createGeneratedProjectStore } = require("../../lib/generated-project-store");
+const {
+  createGeneratedProjectStore,
+} = require("../../lib/generated-project-store");
 const ToastModule = require("tdesign-miniprogram/toast/index");
 
 const showToast = ToastModule.default || ToastModule.showToast || ToastModule;
@@ -14,7 +16,7 @@ const showToast = ToastModule.default || ToastModule.showToast || ToastModule;
 const researchSteps = [
   "正在联网查询国内外优秀产品",
   "正在对比产品优劣",
-  "正在分析产品方向"
+  "正在分析产品方向",
 ];
 
 function createResearchStepItems(activeStep, completedSteps) {
@@ -23,7 +25,7 @@ function createResearchStepItems(activeStep, completedSteps) {
     return {
       label,
       status: done ? "done" : activeStep === index ? "active" : "pending",
-      mark: done ? "✓" : ""
+      mark: done ? "✓" : "",
     };
   });
 }
@@ -33,7 +35,10 @@ function hasAnswer(selectedOptions, customInput) {
 }
 
 function isLastQuestion(session) {
-  return Boolean(session) && session.currentQuestionIndex === session.questions.length - 1;
+  return (
+    Boolean(session) &&
+    session.currentQuestionIndex === session.questions.length - 1
+  );
 }
 
 function canGoPrevious(session) {
@@ -47,7 +52,7 @@ Page({
       "AI 帮我整理小红书选题",
       "给自由职业者做报价管理工具",
       "帮程序员快速生成项目 PRD",
-      "面向本地商家的会员小程序"
+      "面向本地商家的会员小程序",
     ],
     recentProjects: [],
     modalVisible: false,
@@ -65,7 +70,7 @@ Page({
     activeResearchStep: 0,
     completedResearchSteps: [],
     researchStepItems: createResearchStepItems(0, []),
-    generatedProject: null
+    generatedProject: null,
   },
 
   onLoad() {
@@ -88,13 +93,13 @@ Page({
 
   onIdeaInput(event) {
     this.setData({
-      ideaInput: event.detail.value.trimStart()
+      ideaInput: event.detail.value.trimStart(),
     });
   },
 
   onUseExample(event) {
     this.setData({
-      ideaInput: event.currentTarget.dataset.value
+      ideaInput: event.currentTarget.dataset.value,
     });
   },
 
@@ -102,7 +107,12 @@ Page({
     const idea = this.data.ideaInput.trim();
 
     if (!idea) {
-      showToast({ context: this, selector: "#t-toast", message: "先输入一个项目想法", theme: "warning" });
+      showToast({
+        context: this,
+        selector: "#t-toast",
+        message: "先输入一个项目想法",
+        theme: "warning",
+      });
       return;
     }
 
@@ -126,7 +136,7 @@ Page({
       activeResearchStep: 0,
       completedResearchSteps: [],
       researchStepItems: createResearchStepItems(0, []),
-      generatedProject: null
+      generatedProject: null,
     });
   },
 
@@ -137,14 +147,14 @@ Page({
 
     return question.options.map((label) => ({
       label,
-      selected: selectedOptions.indexOf(label) > -1
+      selected: selectedOptions.indexOf(label) > -1,
     }));
   },
 
   onCloseModal() {
     this.stopResearchProgress();
     this.setData({
-      modalVisible: false
+      modalVisible: false,
     });
   },
 
@@ -154,7 +164,7 @@ Page({
     }
 
     this.setData({
-      modalVisible: event.detail.visible
+      modalVisible: event.detail.visible,
     });
   },
 
@@ -172,7 +182,7 @@ Page({
     if (question.type === "single") {
       this.setData({
         selectedOptions: [value],
-        currentOptions: this.createOptionItems(question, [value])
+        currentOptions: this.createOptionItems(question, [value]),
       });
       return;
     }
@@ -185,13 +195,13 @@ Page({
 
     this.setData({
       selectedOptions,
-      currentOptions: this.createOptionItems(question, selectedOptions)
+      currentOptions: this.createOptionItems(question, selectedOptions),
     });
   },
 
   onCustomInput(event) {
     this.setData({
-      customInput: event.detail.value
+      customInput: event.detail.value,
     });
   },
 
@@ -211,20 +221,25 @@ Page({
       customInput: "",
       canStartResearch: canStartResearch(previousSession),
       isLastQuestion: isLastQuestion(previousSession),
-      canGoPrevious: canGoPrevious(previousSession)
+      canGoPrevious: canGoPrevious(previousSession),
     });
   },
 
   onNextQuestion() {
     if (!hasAnswer(this.data.selectedOptions, this.data.customInput)) {
-      showToast({ context: this, selector: "#t-toast", message: "请选择或补充一点信息", theme: "warning" });
+      showToast({
+        context: this,
+        selector: "#t-toast",
+        message: "请选择或补充一点信息",
+        theme: "warning",
+      });
       return;
     }
 
     const answeredLastQuestion = this.data.isLastQuestion;
     const nextSession = answerCurrentQuestion(this.data.session, {
       selectedOptions: this.data.selectedOptions,
-      customInput: this.data.customInput.trim()
+      customInput: this.data.customInput.trim(),
     });
 
     if (answeredLastQuestion) {
@@ -234,7 +249,7 @@ Page({
         customInput: "",
         canStartResearch: true,
         isLastQuestion: false,
-        canGoPrevious: canGoPrevious(nextSession)
+        canGoPrevious: canGoPrevious(nextSession),
       });
       this.startResearchProgress();
       return;
@@ -250,7 +265,7 @@ Page({
       customInput: "",
       canStartResearch: canStartResearch(nextSession),
       isLastQuestion: isLastQuestion(nextSession),
-      canGoPrevious: canGoPrevious(nextSession)
+      canGoPrevious: canGoPrevious(nextSession),
     });
   },
 
@@ -264,7 +279,7 @@ Page({
       stageText: "正在调研市场",
       activeResearchStep: 0,
       completedResearchSteps: [],
-      researchStepItems: createResearchStepItems(0, [])
+      researchStepItems: createResearchStepItems(0, []),
     });
 
     this.runResearchStep(0, runId);
@@ -281,14 +296,17 @@ Page({
       this.setData({
         modalStage: "result",
         stageText: "已生成方向建议",
-        generatedProject
+        generatedProject,
       });
       return;
     }
 
     this.setData({
       activeResearchStep: stepIndex,
-      researchStepItems: createResearchStepItems(stepIndex, this.data.completedResearchSteps)
+      researchStepItems: createResearchStepItems(
+        stepIndex,
+        this.data.completedResearchSteps,
+      ),
     });
 
     this.researchTimer = setTimeout(() => {
@@ -296,10 +314,14 @@ Page({
         return;
       }
 
-      const completedResearchSteps = this.data.completedResearchSteps.concat(stepIndex);
+      const completedResearchSteps =
+        this.data.completedResearchSteps.concat(stepIndex);
       this.setData({
         completedResearchSteps,
-        researchStepItems: createResearchStepItems(stepIndex, completedResearchSteps)
+        researchStepItems: createResearchStepItems(
+          stepIndex,
+          completedResearchSteps,
+        ),
       });
       this.runResearchStep(stepIndex + 1, runId);
     }, 650);
@@ -335,7 +357,7 @@ Page({
       canStartResearch: canStartResearch(editableSession),
       isLastQuestion: isLastQuestion(editableSession),
       canGoPrevious: canGoPrevious(editableSession),
-      generatedProject: null
+      generatedProject: null,
     });
   },
 
@@ -343,20 +365,30 @@ Page({
     const generatedProject = this.data.generatedProject;
 
     if (!generatedProject) {
-      showToast({ context: this, selector: "#t-toast", message: "暂无可保存的方向", theme: "warning" });
+      showToast({
+        context: this,
+        selector: "#t-toast",
+        message: "暂无可保存的方向",
+        theme: "warning",
+      });
       return;
     }
 
     try {
       this.projectStore.saveProject(generatedProject);
     } catch (error) {
-      showToast({ context: this, selector: "#t-toast", message: "保存失败，请稍后重试", theme: "error" });
+      showToast({
+        context: this,
+        selector: "#t-toast",
+        message: "保存失败，请稍后重试",
+        theme: "error",
+      });
       return;
     }
 
     this.setData({
       modalVisible: false,
-      generatedProject: null
+      generatedProject: null,
     });
 
     wx.switchTab({
@@ -365,13 +397,18 @@ Page({
         this.refreshRecentProjects();
       },
       fail: () => {
-        showToast({ context: this, selector: "#t-toast", message: "已保存，可到工作台查看", theme: "success" });
+        showToast({
+          context: this,
+          selector: "#t-toast",
+          message: "已保存，可到工作台查看",
+          theme: "success",
+        });
         this.refreshRecentProjects();
-      }
+      },
     });
   },
 
   onUnload() {
     this.stopResearchProgress();
-  }
+  },
 });

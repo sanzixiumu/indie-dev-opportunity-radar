@@ -1,6 +1,10 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { STORAGE_KEY, createGeneratedProjectStore, createMemoryStorage } = require("../lib/generated-project-store");
+const {
+  STORAGE_KEY,
+  createGeneratedProjectStore,
+  createMemoryStorage,
+} = require("../lib/generated-project-store");
 
 function sampleProject(overrides = {}) {
   return {
@@ -17,19 +21,23 @@ function sampleProject(overrides = {}) {
     suggestions: ["先访谈 5 个独立开发者"],
     createdAt: overrides.createdAt || "2026-06-01T00:00:00.000Z",
     favoriteStatus: false,
-    compareStatus: false
+    compareStatus: false,
   };
 }
 
 test("saveProject stores projects newest first", () => {
   const store = createGeneratedProjectStore(createMemoryStorage());
 
-  store.saveProject(sampleProject({ id: "old", createdAt: "2026-06-01T00:00:00.000Z" }));
-  store.saveProject(sampleProject({ id: "new", createdAt: "2026-06-01T01:00:00.000Z" }));
+  store.saveProject(
+    sampleProject({ id: "old", createdAt: "2026-06-01T00:00:00.000Z" }),
+  );
+  store.saveProject(
+    sampleProject({ id: "new", createdAt: "2026-06-01T01:00:00.000Z" }),
+  );
 
   assert.deepEqual(
     store.getProjects().map((project) => project.id),
-    ["new", "old"]
+    ["new", "old"],
   );
 });
 
@@ -40,7 +48,7 @@ test("createGeneratedProjectStore uses memory fallback when no storage is provid
 
   assert.deepEqual(
     store.getProjects().map((project) => project.id),
-    ["project-1"]
+    ["project-1"],
   );
 });
 
@@ -54,7 +62,10 @@ test("createGeneratedProjectStore uses wx storage when no storage is provided", 
     const store = createGeneratedProjectStore();
     store.saveProject(sampleProject({ id: "project-1" }));
 
-    assert.deepEqual(storage.getStorageSync(STORAGE_KEY).map((project) => project.id), ["project-1"]);
+    assert.deepEqual(
+      storage.getStorageSync(STORAGE_KEY).map((project) => project.id),
+      ["project-1"],
+    );
   } finally {
     if (originalWx === undefined) {
       delete global.wx;
@@ -65,7 +76,9 @@ test("createGeneratedProjectStore uses wx storage when no storage is provided", 
 });
 
 test("getProjects normalizes non-array storage values to an empty array", () => {
-  const store = createGeneratedProjectStore(createMemoryStorage({ [STORAGE_KEY]: "not-an-array" }));
+  const store = createGeneratedProjectStore(
+    createMemoryStorage({ [STORAGE_KEY]: "not-an-array" }),
+  );
 
   assert.deepEqual(store.getProjects(), []);
 });
@@ -86,18 +99,23 @@ test("saveProject requires a project with an id", () => {
 
   assert.throws(() => store.saveProject(), /project\.id/);
   assert.throws(() => store.saveProject({}), /project\.id/);
-  assert.throws(() => store.saveProject(Object.assign(sampleProject(), { id: "" })), /project\.id/);
+  assert.throws(
+    () => store.saveProject(Object.assign(sampleProject(), { id: "" })),
+    /project\.id/,
+  );
 });
 
 test("saveProject sorts invalid createdAt values as oldest", () => {
   const store = createGeneratedProjectStore(createMemoryStorage());
 
-  store.saveProject(sampleProject({ id: "valid", createdAt: "2026-06-01T00:00:00.000Z" }));
+  store.saveProject(
+    sampleProject({ id: "valid", createdAt: "2026-06-01T00:00:00.000Z" }),
+  );
   store.saveProject(sampleProject({ id: "invalid", createdAt: "not-a-date" }));
 
   assert.deepEqual(
     store.getProjects().map((project) => project.id),
-    ["valid", "invalid"]
+    ["valid", "invalid"],
   );
 });
 
