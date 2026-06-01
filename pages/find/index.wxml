@@ -81,7 +81,7 @@
       </view>
     </block>
 
-    <block wx:if="{{stage === 'questioning' && questions.length}}">
+    <block wx:if="{{stage === 'questioning'}}">
       <view class="idea-edit-card">
         <view class="idea-edit-title">项目想法</view>
         <t-textarea
@@ -94,33 +94,41 @@
           bind:change="onModalIdeaInput"
         />
       </view>
-      <view class="question-card">
-        <view class="question-title">{{questions[currentQuestionIndex].title}}</view>
-        <view class="question-desc">{{questions[currentQuestionIndex].description}}</view>
-        <view class="option-list">
-          <t-tag
-            wx:for="{{questions[currentQuestionIndex].options}}"
-            wx:key="value"
-            t-class="option-item {{selectedOptionMap[item.value] ? 'option-selected' : ''}}"
-            theme="{{selectedOptionMap[item.value] ? 'primary' : 'default'}}"
-            variant="{{selectedOptionMap[item.value] ? 'light' : 'outline'}}"
-            size="large"
-            data-value="{{item.value}}"
-            bind:click="onSelectOption"
-          >
-            {{item.label}}
-          </t-tag>
+      <block wx:if="{{questions.length}}">
+        <view class="question-card">
+          <view class="question-title">{{questions[currentQuestionIndex].title}}</view>
+          <view class="question-desc">{{questions[currentQuestionIndex].description}}</view>
+          <view class="option-list">
+            <t-tag
+              wx:for="{{questions[currentQuestionIndex].options}}"
+              wx:key="value"
+              t-class="option-item {{selectedOptionMap[item.value] ? 'option-selected' : ''}}"
+              theme="{{selectedOptionMap[item.value] ? 'primary' : 'default'}}"
+              variant="{{selectedOptionMap[item.value] ? 'light' : 'outline'}}"
+              size="large"
+              data-value="{{item.value}}"
+              bind:click="onSelectOption"
+            >
+              {{item.label}}
+            </t-tag>
+          </view>
+          <t-textarea
+            wx:if="{{questions[currentQuestionIndex].allowCustomInput}}"
+            t-class="custom-input"
+            value="{{currentCustomInput}}"
+            placeholder="也可以补充你的具体情况"
+            autosize="{{customAutosize}}"
+            indicator="{{false}}"
+            bind:change="onCustomInput"
+          />
         </view>
-        <t-textarea
-          wx:if="{{questions[currentQuestionIndex].allowCustomInput}}"
-          t-class="custom-input"
-          value="{{currentCustomInput}}"
-          placeholder="也可以补充你的具体情况"
-          autosize="{{customAutosize}}"
-          indicator="{{false}}"
-          bind:change="onCustomInput"
-        />
-      </view>
+      </block>
+      <block wx:else>
+        <view class="question-card">
+          <view class="question-title">需要重新生成追问</view>
+          <view class="question-desc">项目想法已更新，重新生成追问后再继续孵化。</view>
+        </view>
+      </block>
     </block>
 
     <block wx:if="{{stage === 'researching'}}">
@@ -199,6 +207,9 @@
       <t-button t-class="action-primary" theme="primary" bind:tap="onNextQuestion">
         {{currentQuestionIndex === questions.length - 1 ? '开始调研市场' : '下一步'}}
       </t-button>
+    </block>
+    <block wx:if="{{stage === 'questioning' && !questions.length}}">
+      <t-button t-class="action-primary" theme="primary" disabled="{{!ideaInput}}" bind:tap="onRegenerateQuestions">重新生成追问</t-button>
     </block>
     <block wx:if="{{stage === 'result'}}">
       <t-button t-class="secondary-button" theme="default" variant="outline" bind:tap="onRegenerate">重新生成</t-button>

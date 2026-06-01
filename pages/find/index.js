@@ -234,12 +234,11 @@ Page({
       return;
     }
 
-    const runId = this.createRunId();
-    this.stopResearchProgress();
-
     const client = this.ensureClient();
 
     if (!client) {
+      this.createRunId();
+      this.stopResearchProgress();
       const session = createIncubationSession(idea);
       this.setData({
         ideaInput: idea,
@@ -261,8 +260,51 @@ Page({
       return;
     }
 
+    await this.generateIncubationQuestions(idea, { showModal: true });
+  },
+
+  async generateIncubationQuestions(idea, options = {}) {
+    const normalizedIdea = (idea || "").trim();
+
+    if (!normalizedIdea) {
+      showToast({
+        context: this,
+        selector: "#t-toast",
+        message: "先输入一个项目想法",
+        theme: "warning",
+      });
+      return;
+    }
+
+    const client = this.ensureClient();
+
+    if (!client) {
+      const session = createIncubationSession(normalizedIdea);
+      this.setData({
+        ideaInput: normalizedIdea,
+        modalVisible: options.showModal ? true : this.data.modalVisible,
+        stage: "questioning",
+        stageText: createStageText("questioning"),
+        questions: normalizeQuestions(session.questions),
+        currentQuestionIndex: 0,
+        answers: [],
+        currentSelectedOptions: [],
+        selectedOptionMap: {},
+        currentCustomInput: "",
+        researchSteps: createResearchSteps(0),
+        activeResearchStep: 0,
+        projectResult: null,
+        errorMessage: "",
+        ...createLegacySessionState(session),
+      });
+      return;
+    }
+
+    const runId = this.createRunId();
+    this.stopResearchProgress();
     this.setData({
-      modalVisible: true,
+      ideaInput: normalizedIdea,
+      modalVisible: options.showModal ? true : this.data.modalVisible,
       stage: "creating_questions",
       stageText: createStageText("creating_questions"),
       questions: [],
@@ -279,7 +321,7 @@ Page({
 
     try {
       const data = await client.call("createIncubationQuestions", {
-        idea,
+        idea: normalizedIdea,
       });
       if (!this.isCurrentRun(runId)) {
         return;
@@ -307,6 +349,10 @@ Page({
         errorMessage: createFriendlyErrorMessage(error),
       });
     }
+  },
+
+  onRegenerateQuestions() {
+    return this.generateIncubationQuestions(this.data.ideaInput);
   },
 
   onCloseModal() {

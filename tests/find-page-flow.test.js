@@ -150,3 +150,75 @@ test("modal idea edits clear cloud generated questions and result", () => {
   assert.deepEqual(page.data.answers, []);
   assert.equal(page.data.projectResult, null);
 });
+
+test("regenerating questions after a cloud idea edit uses the edited idea", async () => {
+  const page = createPageInstance();
+  const calls = [];
+
+  page.client = {
+    async call(name, payload) {
+      calls.push({ name, payload });
+      return {
+        questions: [
+          {
+            questionId: "q_new",
+            title: "新问题",
+            description: "新描述",
+            options: [{ label: "新选项", value: "new" }],
+          },
+        ],
+      };
+    },
+  };
+  page.setData({
+    modalVisible: true,
+    ideaInput: "我想做一个项目 PRD 生成工具",
+    session: null,
+    stage: "questioning",
+    questions: [
+      {
+        questionId: "q_old",
+        title: "旧问题",
+        options: [{ label: "旧选项", value: "old" }],
+      },
+    ],
+  });
+
+  page.onModalIdeaInput({ detail: { value: "我想做一个小红书选题工具" } });
+
+  assert.deepEqual(page.data.questions, []);
+
+  await page.onRegenerateQuestions();
+
+  assert.deepEqual(calls, [
+    {
+      name: "createIncubationQuestions",
+      payload: { idea: "我想做一个小红书选题工具" },
+    },
+  ]);
+  assert.equal(page.data.stage, "questioning");
+  assert.equal(page.data.questions[0].questionId, "q_new");
+});
+
+test("regenerating questions with a blank idea does not call the backend", async () => {
+  const page = createPageInstance();
+  let callCount = 0;
+
+  page.client = {
+    async call() {
+      callCount += 1;
+      return { questions: [] };
+    },
+  };
+  page.setData({
+    modalVisible: true,
+    ideaInput: "",
+    session: null,
+    stage: "questioning",
+    questions: [],
+  });
+
+  await page.onRegenerateQuestions();
+
+  assert.equal(callCount, 0);
+});
