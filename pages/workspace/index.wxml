@@ -1,13 +1,101 @@
-<view class="page">
+<view class="page workspace-page">
   <view class="eyebrow">WORKSPACE</view>
-  <view class="title">把想法变成可执行方案</view>
-  <view class="subtitle">在这里生成 PRD、MVP 清单、项目对比报告和冷启动验证计划。</view>
+  <view class="title">已生成项目</view>
+  <view class="subtitle">这里承接从灵感孵化确定的项目方向，你可以收藏、加入对比或继续生成 PRD。</view>
 
-  <view class="panel">
-    <view class="panel-title">主要转化功能</view>
-    <view class="panel-text">工作台会承接从机会卡发起的生成、对比和导出操作。</view>
-    <view class="pill-row">
-      <view wx:for="{{tags}}" wx:key="*this" class="pill">{{item}}</view>
+  <block wx:if="{{projects.length}}">
+    <view wx:for="{{projects}}" wx:key="id" class="project-card" data-id="{{item.id}}" bindtap="onOpenDetail">
+      <view class="project-header">
+        <view class="project-title">{{item.title}}</view>
+        <t-tag theme="warning" variant="light">{{item.risks.length}} 个风险</t-tag>
+      </view>
+      <view class="project-text">{{item.conclusion}}</view>
+      <view class="project-text entry-text">{{item.entryDirection}}</view>
+      <view class="project-meta">{{item.createdAt}}</view>
+      <view class="project-actions" catchtap="noop">
+        <t-button t-class="project-action" size="small" theme="{{item.favoriteStatus ? 'primary' : 'default'}}" variant="{{item.favoriteStatus ? 'base' : 'outline'}}" data-id="{{item.id}}" catch:click="onToggleFavorite">
+          {{item.favoriteStatus ? '已收藏' : '收藏'}}
+        </t-button>
+        <t-button t-class="project-action" size="small" theme="{{item.compareStatus ? 'primary' : 'default'}}" variant="{{item.compareStatus ? 'base' : 'outline'}}" data-id="{{item.id}}" catch:click="onToggleCompare">
+          {{item.compareStatus ? '已对比' : '对比'}}
+        </t-button>
+        <t-button t-class="project-action prd-action" size="small" theme="primary" catch:click="onGeneratePrd">生成PRD</t-button>
+      </view>
     </view>
+  </block>
+
+  <view wx:else class="empty-wrap">
+    <t-empty description="去「找项目」输入一个项目想法，AI 会帮你孵化方向并保存到这里。" />
   </view>
 </view>
+
+<t-toast id="t-toast" />
+
+<t-popup
+  wx:if="{{selectedProject}}"
+  visible="{{detailVisible}}"
+  placement="bottom"
+  close-on-overlay-click="{{false}}"
+  show-overlay="{{true}}"
+  custom-style="height: 100vh;"
+  t-class-content="detail-modal"
+  bind:visible-change="onDetailVisibleChange"
+>
+  <view class="detail-header">
+    <t-button shape="circle" theme="default" variant="text" bind:click="onCloseDetail">
+      <t-icon name="close" size="40rpx" />
+    </t-button>
+    <view class="detail-title">项目详情</view>
+    <view class="header-spacer"></view>
+  </view>
+
+  <scroll-view class="detail-body" scroll-y="true">
+    <view class="detail-card">
+      <view class="detail-project-title">{{selectedProject.title}}</view>
+
+      <view class="detail-section">
+        <view class="detail-heading">方向结论</view>
+        <view class="detail-text">{{selectedProject.conclusion}}</view>
+      </view>
+
+      <view class="detail-section">
+        <view class="detail-heading">国内产品</view>
+        <view wx:for="{{selectedProject.domesticProducts}}" wx:key="name" class="product-row">
+          <view class="product-name">{{item.name}}</view>
+          <view class="product-text">{{item.positioning}}</view>
+          <view class="product-text">优势：{{item.strengths}}</view>
+          <view class="product-text">短板：{{item.weaknesses}}</view>
+        </view>
+      </view>
+
+      <view class="detail-section">
+        <view class="detail-heading">国外产品</view>
+        <view wx:for="{{selectedProject.globalProducts}}" wx:key="name" class="product-row">
+          <view class="product-name">{{item.name}}</view>
+          <view class="product-text">{{item.positioning}}</view>
+          <view class="product-text">优势：{{item.strengths}}</view>
+          <view class="product-text">短板：{{item.weaknesses}}</view>
+        </view>
+      </view>
+
+      <view class="detail-section">
+        <view class="detail-heading">推荐切入方向和可切入优势</view>
+        <view class="detail-text">{{selectedProject.entryDirection}}</view>
+        <view wx:for="{{selectedProject.advantages}}" wx:key="*this" class="bullet-line">{{item}}</view>
+      </view>
+
+      <view class="detail-section">
+        <view class="detail-heading">风险</view>
+        <view wx:for="{{selectedProject.risks}}" wx:key="description" class="risk-row">
+          <view class="risk-desc">{{item.description}}</view>
+          <view class="risk-source">来源：{{item.source}}</view>
+        </view>
+      </view>
+
+      <view class="detail-section">
+        <view class="detail-heading">建议</view>
+        <view wx:for="{{selectedProject.suggestions}}" wx:key="*this" class="bullet-line">{{item}}</view>
+      </view>
+    </view>
+  </scroll-view>
+</t-popup>
