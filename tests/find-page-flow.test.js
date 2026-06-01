@@ -111,3 +111,42 @@ test("modal idea edits rebuild the incubation session from the first question", 
     page.data.currentOptions.some((option) => option.label === "内容创作者"),
   );
 });
+
+test("modal idea edits clear cloud generated questions and result", () => {
+  const page = createPageInstance();
+
+  page.client = {
+    async call() {
+      throw new Error("not used");
+    },
+  };
+  page.setData({
+    ideaInput: "我想做一个项目 PRD 生成工具",
+    session: null,
+    stage: "result",
+    questions: [
+      {
+        questionId: "q_old",
+        title: "旧问题",
+        options: [{ label: "旧选项", value: "old" }],
+      },
+    ],
+    answers: [
+      {
+        questionId: "q_old",
+        questionTitle: "旧问题",
+        selectedOptions: ["old"],
+        customInput: "",
+      },
+    ],
+    projectResult: { title: "旧方向" },
+  });
+
+  page.onModalIdeaInput({ detail: { value: "我想做一个小红书选题工具" } });
+
+  assert.equal(page.data.ideaInput, "我想做一个小红书选题工具");
+  assert.equal(page.data.stage, "questioning");
+  assert.deepEqual(page.data.questions, []);
+  assert.deepEqual(page.data.answers, []);
+  assert.equal(page.data.projectResult, null);
+});

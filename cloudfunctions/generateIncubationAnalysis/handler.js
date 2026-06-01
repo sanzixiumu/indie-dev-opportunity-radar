@@ -73,8 +73,6 @@ function createGenerateIncubationAnalysis({ gateway, now, reasoningModelInfo }) 
       const prompt = renderResearchPrompt({ idea, answers });
       const modelResult = await gateway.callModel({
         taskType: "web_research",
-        provider: payload.provider,
-        model: payload.model,
         messages: [{ role: "user", content: prompt }],
         tools: [{ type: "web_search" }],
         responseFormat: { type: "json_object" },

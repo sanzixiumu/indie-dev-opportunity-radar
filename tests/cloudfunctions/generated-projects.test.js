@@ -6,6 +6,9 @@ const {
   mapDocumentToProject,
   mapProjectToDocument,
 } = require("../../cloudfunctions/_shared/generated-projects");
+const {
+  createGenerateIncubationAnalysis,
+} = require("../../cloudfunctions/generateIncubationAnalysis/handler");
 
 function sampleProject(overrides = {}) {
   return {
@@ -67,6 +70,55 @@ function sampleProject(overrides = {}) {
     createdAt: overrides.createdAt || "2026-06-01T00:00:00.000Z",
     favoriteStatus: overrides.favoriteStatus || false,
     compareStatus: overrides.compareStatus || false,
+  };
+}
+
+function createAnalysisPayload() {
+  return {
+    title: "AI PRD 生成助手",
+    conclusion: "建议先聚焦独立开发者的轻量 PRD 草稿生成。",
+    limitedInfo: false,
+    limitedInfoReason: "",
+    domesticProducts: [
+      {
+        name: "扣子",
+        positioning: "AI Bot 与工作流平台",
+        strengths: "生态和模型能力完善",
+        weaknesses: "对 PRD 场景的垂直模板不足",
+        evidence: "官网能力说明",
+      },
+    ],
+    globalProducts: [
+      {
+        name: "Notion AI",
+        positioning: "知识管理与写作助手",
+        strengths: "用户基础大",
+        weaknesses: "项目验证链路不够垂直",
+        evidence: "产品页说明",
+      },
+    ],
+    entryDirection: "先做面向独立开发者的 PRD 草稿和验证清单生成",
+    advantages: ["用户路径清晰"],
+    risks: [
+      {
+        description: "通用 AI 写作产品可能覆盖基础 PRD 能力",
+        source: "竞品强度",
+      },
+    ],
+    suggestions: [
+      {
+        priority: "P0",
+        action: "访谈 5 个独立开发者并生成试用稿",
+        expectedSignal: "至少 3 人愿意继续使用",
+      },
+    ],
+    researchSources: [
+      {
+        title: "竞品官网",
+        url: "https://example.com",
+        summary: "用于判断竞品定位和能力边界",
+      },
+    ],
   };
 }
 
@@ -156,8 +208,61 @@ test("mapProjectToDocument maps camelCase draft to snake_case generated_assets d
   assert.equal(doc.favorite_status, false);
   assert.equal(doc.compare_status, false);
   assert.equal(doc.model_info.research_provider, "doubao");
-  assert.equal(doc.created_at, "2026-06-01T00:00:00.000Z");
+  assert.equal(doc.created_at, "2026-06-01T12:00:00.000Z");
   assert.equal(doc.updated_at, "2026-06-01T12:00:00.000Z");
+});
+
+test("saveProject accepts generated analysis project drafts without client id or createdAt", async () => {
+  const writesByCollection = {};
+  const db = createDb({ generated_assets: [] }, writesByCollection);
+  const analysis = createAnalysisPayload();
+  const answers = [
+    {
+      questionId: "q1",
+      questionTitle: "目标用户是谁？",
+      selectedOptions: ["独立开发者"],
+      customInput: "小团队",
+    },
+  ];
+  const main = createGenerateIncubationAnalysis({
+    gateway: {
+      async callModel() {
+        return {
+          provider: "doubao",
+          model: "doubao-seed",
+          text: JSON.stringify(analysis),
+        };
+      },
+    },
+    now: () => "2026-06-01T12:00:00.000Z",
+  });
+  const generated = await main(
+    {
+      idea: "我想做 AI PRD 工具",
+      answers,
+    },
+    {},
+  );
+  const repository = createGeneratedProjectRepository({
+    db,
+    now: () => "2026-06-01T12:30:00.000Z",
+    createId: () => "asset-created",
+  });
+
+  assert.equal(generated.ok, true);
+  assert.equal(generated.data.project.id, undefined);
+  assert.equal(generated.data.project.createdAt, undefined);
+
+  const saved = await repository.saveProject({
+    openid: "openid-1",
+    userId: "user-1",
+    project: generated.data.project,
+  });
+
+  assert.equal(saved.id, "asset-created");
+  assert.equal(saved.createdAt, "2026-06-01T12:30:00.000Z");
+  assert.equal(writesByCollection.generated_assets[0].asset_id, "asset-created");
+  assert.equal(writesByCollection.generated_assets[0].created_at, "2026-06-01T12:30:00.000Z");
 });
 
 test("mapDocumentToProject maps snake_case doc to camelCase project", () => {

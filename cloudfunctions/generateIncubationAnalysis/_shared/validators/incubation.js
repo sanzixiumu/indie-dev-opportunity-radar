@@ -291,12 +291,10 @@ function normalizeGeneratedProjectDraft(payload) {
   const analysis = normalizeAnalysisPayload(payload);
 
   return {
-    id: normalizeString(payload.id, "id"),
     sourceIdea: normalizeString(payload.sourceIdea, "sourceIdea"),
     answers: normalizeAnswers(payload.answers || []),
     ...analysis,
     modelInfo: normalizeModelInfo(payload.modelInfo),
-    createdAt: normalizeString(payload.createdAt, "createdAt"),
     favoriteStatus: payload.favoriteStatus === true,
     compareStatus: payload.compareStatus === true,
   };

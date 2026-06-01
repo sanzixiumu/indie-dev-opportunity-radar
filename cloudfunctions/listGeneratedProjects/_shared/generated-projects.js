@@ -49,7 +49,7 @@ function mapProjectToDocument({ project, assetId, openid, userId, now }) {
     model_info: mapModelInfoToDocument(normalizedProject.modelInfo),
     favorite_status: normalizedProject.favoriteStatus,
     compare_status: normalizedProject.compareStatus,
-    created_at: normalizedProject.createdAt,
+    created_at: timestamp,
     updated_at: timestamp,
   };
 }

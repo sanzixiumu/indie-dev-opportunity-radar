@@ -208,8 +208,8 @@ test("gateway call uses web research options", async () => {
 
   assert.equal(calls.length, 1);
   assert.equal(calls[0].taskType, "web_research");
-  assert.equal(calls[0].provider, "doubao");
-  assert.equal(calls[0].model, "doubao-seed-search");
+  assert.equal(calls[0].provider, undefined);
+  assert.equal(calls[0].model, undefined);
   assert.deepEqual(calls[0].tools, [{ type: "web_search" }]);
   assert.deepEqual(calls[0].responseFormat, { type: "json_object" });
   assert.equal(calls[0].temperature, 0.1);

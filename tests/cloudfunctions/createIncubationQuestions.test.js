@@ -96,8 +96,8 @@ test("returns generated question payload and modelInfo", async () => {
   });
   assert.equal(calls.length, 1);
   assert.equal(calls[0].taskType, "reasoning");
-  assert.equal(calls[0].provider, "deepseek");
-  assert.equal(calls[0].model, "deepseek-v4-pro");
+  assert.equal(calls[0].provider, undefined);
+  assert.equal(calls[0].model, undefined);
   assert.deepEqual(calls[0].messages, [
     {
       role: "user",

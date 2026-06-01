@@ -62,8 +62,6 @@ function createCreateIncubationQuestions({ gateway, now, createId }) {
       const prompt = renderQuestionPrompt(idea);
       const modelResult = await gateway.callModel({
         taskType: "reasoning",
-        provider: payload.provider,
-        model: payload.model,
         messages: [{ role: "user", content: prompt }],
         responseFormat: { type: "json_object" },
         temperature: 0.2,
