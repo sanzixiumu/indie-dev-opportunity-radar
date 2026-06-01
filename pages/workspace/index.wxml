@@ -1,35 +1,36 @@
 <view class="page workspace-page">
   <view class="eyebrow">WORKSPACE</view>
-  <view class="title">已生成项目</view>
-  <view class="subtitle">这里承接从灵感孵化确定的项目方向，你可以收藏、加入对比或继续生成 PRD。</view>
+  <view class="title">工作台</view>
+  <view class="subtitle">这里承接从灵感孵化确定的项目方向，你可以继续查看详情、收藏、对比或生成 PRD。</view>
 
-  <block wx:if="{{projects.length}}">
+  <view wx:if="{{errorMessage}}" class="error-card">{{errorMessage}}</view>
+
+  <view wx:if="{{loading}}" class="loading-card">
+    <t-loading size="36rpx" theme="circular" />
+    <view class="loading-text">正在加载项目</view>
+  </view>
+
+  <block wx:elif="{{hasProjects}}">
     <view wx:for="{{projects}}" wx:key="id" class="project-card" data-id="{{item.id}}" bindtap="onOpenDetail">
       <view class="project-header">
         <view class="project-title">{{item.title}}</view>
-        <t-tag theme="warning" variant="light">{{item.risks.length}} 个风险</t-tag>
+        <t-tag theme="{{item.limitedInfo ? 'warning' : 'success'}}" variant="light">{{item.limitedInfoLabel}}</t-tag>
       </view>
       <view class="project-text">{{item.conclusion}}</view>
       <view class="project-text entry-text">{{item.entryDirection}}</view>
-      <view class="project-meta">{{item.createdAtText}}</view>
-      <view class="project-actions" catchtap="noop">
-        <t-button t-class="project-action" size="small" theme="{{item.favoriteStatus ? 'primary' : 'default'}}" variant="{{item.favoriteStatus ? 'base' : 'outline'}}" data-id="{{item.id}}" catch:tap="onToggleFavorite">
-          {{item.favoriteStatus ? '已收藏' : '收藏'}}
-        </t-button>
-        <t-button t-class="project-action" size="small" theme="{{item.compareStatus ? 'primary' : 'default'}}" variant="{{item.compareStatus ? 'base' : 'outline'}}" data-id="{{item.id}}" catch:tap="onToggleCompare">
-          {{item.compareStatus ? '已对比' : '对比'}}
-        </t-button>
-        <t-button t-class="project-action prd-action" size="small" theme="primary" catch:tap="onGeneratePrd">生成PRD</t-button>
+      <view class="project-meta">风险 {{item.riskCount}} 个 · {{item.createdAt}}</view>
+      <view class="project-actions" catchtap="onComingSoon">
+        <t-button t-class="project-action" size="small" theme="default" variant="outline" catchtap="onComingSoon">收藏</t-button>
+        <t-button t-class="project-action" size="small" theme="default" variant="outline" catchtap="onComingSoon">对比</t-button>
+        <t-button t-class="project-action prd-action" size="small" theme="primary" catchtap="onComingSoon">生成PRD</t-button>
       </view>
     </view>
   </block>
 
-  <view wx:else class="empty-wrap">
+  <view wx:elif="{{!loadFailed}}" class="empty-wrap">
     <t-empty description="去「找项目」输入一个项目想法，AI 会帮你孵化方向并保存到这里。" />
   </view>
 </view>
-
-<t-toast id="t-toast" />
 
 <t-popup
   wx:if="{{selectedProject}}"
@@ -39,10 +40,9 @@
   show-overlay="{{true}}"
   custom-style="height: 100vh;"
   t-class-content="detail-modal"
-  bind:visible-change="onDetailVisibleChange"
 >
   <view class="detail-header">
-    <t-button shape="circle" theme="default" variant="text" bind:tap="onCloseDetail">
+    <t-button shape="circle" theme="default" variant="text" bindtap="onCloseDetail">
       <t-icon name="close" size="40rpx" />
     </t-button>
     <view class="detail-title">项目详情</view>
@@ -52,6 +52,28 @@
   <scroll-view class="detail-body" scroll-y="true">
     <view class="detail-card">
       <view class="detail-project-title">{{selectedProject.title}}</view>
+      <view class="detail-meta-grid">
+        <view class="meta-pill">{{selectedProject.limitedInfoLabel}}</view>
+        <view class="meta-pill">{{selectedProject.favoriteStatusLabel}}</view>
+        <view class="meta-pill">{{selectedProject.compareStatusLabel}}</view>
+      </view>
+
+      <view wx:if="{{selectedProject.hasLimitedInfoReason}}" class="limited-reason">
+        {{selectedProject.limitedInfoReason}}
+      </view>
+
+      <view wx:if="{{selectedProject.hasSourceIdea}}" class="detail-section">
+        <view class="detail-heading">原始想法</view>
+        <view class="detail-text">{{selectedProject.sourceIdea}}</view>
+      </view>
+
+      <view wx:if="{{selectedProject.hasAnswers}}" class="detail-section">
+        <view class="detail-heading">孵化回答</view>
+        <view wx:for="{{selectedProject.answers}}" wx:key="questionId" class="answer-row">
+          <view class="answer-question">{{item.questionTitle}}</view>
+          <view class="answer-summary">{{item.answerSummary}}</view>
+        </view>
+      </view>
 
       <view class="detail-section">
         <view class="detail-heading">方向结论</view>
@@ -59,29 +81,35 @@
       </view>
 
       <view class="detail-section">
+        <view class="detail-heading">推荐切入方向</view>
+        <view class="detail-text entry-text">{{selectedProject.entryDirection}}</view>
+      </view>
+
+      <view class="detail-section">
+        <view class="detail-heading">可切入优势</view>
+        <view wx:for="{{selectedProject.advantages}}" wx:key="*this" class="bullet-line">{{item}}</view>
+      </view>
+
+      <view wx:if="{{selectedProject.hasDomesticProducts}}" class="detail-section">
         <view class="detail-heading">国内产品</view>
         <view wx:for="{{selectedProject.domesticProducts}}" wx:key="name" class="product-row">
           <view class="product-name">{{item.name}}</view>
           <view class="product-text">{{item.positioning}}</view>
           <view class="product-text">优势：{{item.strengths}}</view>
           <view class="product-text">短板：{{item.weaknesses}}</view>
+          <view wx:if="{{item.evidence}}" class="product-text">依据：{{item.evidence}}</view>
         </view>
       </view>
 
-      <view class="detail-section">
+      <view wx:if="{{selectedProject.hasGlobalProducts}}" class="detail-section">
         <view class="detail-heading">国外产品</view>
         <view wx:for="{{selectedProject.globalProducts}}" wx:key="name" class="product-row">
           <view class="product-name">{{item.name}}</view>
           <view class="product-text">{{item.positioning}}</view>
           <view class="product-text">优势：{{item.strengths}}</view>
           <view class="product-text">短板：{{item.weaknesses}}</view>
+          <view wx:if="{{item.evidence}}" class="product-text">依据：{{item.evidence}}</view>
         </view>
-      </view>
-
-      <view class="detail-section">
-        <view class="detail-heading">推荐切入方向和可切入优势</view>
-        <view class="detail-text">{{selectedProject.entryDirection}}</view>
-        <view wx:for="{{selectedProject.advantages}}" wx:key="*this" class="bullet-line">{{item}}</view>
       </view>
 
       <view class="detail-section">
@@ -94,7 +122,24 @@
 
       <view class="detail-section">
         <view class="detail-heading">建议</view>
-        <view wx:for="{{selectedProject.suggestions}}" wx:key="*this" class="bullet-line">{{item}}</view>
+        <view wx:for="{{selectedProject.suggestions}}" wx:key="action" class="bullet-line">{{item.suggestionSummary}}</view>
+      </view>
+
+      <view wx:if="{{selectedProject.hasResearchSources}}" class="detail-section">
+        <view class="detail-heading">调研来源</view>
+        <view wx:for="{{selectedProject.researchSources}}" wx:key="title" class="source-row">
+          <view class="product-name">{{item.title}}</view>
+          <view class="product-text">{{item.summary}}</view>
+          <view class="source-url">{{item.url}}</view>
+        </view>
+      </view>
+
+      <view wx:if="{{selectedProject.hasModelInfoRows}}" class="detail-section">
+        <view class="detail-heading">模型信息</view>
+        <view wx:for="{{selectedProject.modelInfoRows}}" wx:key="label" class="model-row">
+          <view class="model-label">{{item.label}}</view>
+          <view class="model-value">{{item.value}}</view>
+        </view>
       </view>
     </view>
   </scroll-view>

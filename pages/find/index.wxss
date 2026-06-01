@@ -262,6 +262,19 @@
   line-height: 1.5;
 }
 
+.error-card {
+  margin-bottom: 20rpx;
+  padding: 18rpx;
+  border: 1rpx solid #fecaca;
+  border-radius: 12rpx;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 25rpx;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+}
+
 .ai-note-wrap {
   position: relative;
   z-index: 1;
@@ -458,6 +471,10 @@
   overflow-wrap: anywhere;
 }
 
+.option-selected {
+  font-weight: 700;
+}
+
 .custom-input {
   margin-top: 24rpx;
 }
@@ -467,6 +484,12 @@
   align-items: center;
   gap: 18rpx;
   padding: 22rpx 0;
+}
+
+.loading-card {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
 }
 
 .progress-dot {
@@ -523,7 +546,8 @@
 }
 
 .product-row,
-.risk-row {
+.risk-row,
+.source-row {
   margin-top: 14rpx;
   padding: 18rpx;
   border-radius: 12rpx;
@@ -539,6 +563,14 @@
 
 .risk-source {
   color: #904900;
+}
+
+.source-url {
+  margin-top: 8rpx;
+  color: #0f766e;
+  font-size: 23rpx;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .modal-actions {

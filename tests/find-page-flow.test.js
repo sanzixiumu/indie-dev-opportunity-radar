@@ -111,3 +111,114 @@ test("modal idea edits rebuild the incubation session from the first question", 
     page.data.currentOptions.some((option) => option.label === "内容创作者"),
   );
 });
+
+test("modal idea edits clear cloud generated questions and result", () => {
+  const page = createPageInstance();
+
+  page.client = {
+    async call() {
+      throw new Error("not used");
+    },
+  };
+  page.setData({
+    ideaInput: "我想做一个项目 PRD 生成工具",
+    session: null,
+    stage: "result",
+    questions: [
+      {
+        questionId: "q_old",
+        title: "旧问题",
+        options: [{ label: "旧选项", value: "old" }],
+      },
+    ],
+    answers: [
+      {
+        questionId: "q_old",
+        questionTitle: "旧问题",
+        selectedOptions: ["old"],
+        customInput: "",
+      },
+    ],
+    projectResult: { title: "旧方向" },
+  });
+
+  page.onModalIdeaInput({ detail: { value: "我想做一个小红书选题工具" } });
+
+  assert.equal(page.data.ideaInput, "我想做一个小红书选题工具");
+  assert.equal(page.data.stage, "questioning");
+  assert.deepEqual(page.data.questions, []);
+  assert.deepEqual(page.data.answers, []);
+  assert.equal(page.data.projectResult, null);
+});
+
+test("regenerating questions after a cloud idea edit uses the edited idea", async () => {
+  const page = createPageInstance();
+  const calls = [];
+
+  page.client = {
+    async call(name, payload) {
+      calls.push({ name, payload });
+      return {
+        questions: [
+          {
+            questionId: "q_new",
+            title: "新问题",
+            description: "新描述",
+            options: [{ label: "新选项", value: "new" }],
+          },
+        ],
+      };
+    },
+  };
+  page.setData({
+    modalVisible: true,
+    ideaInput: "我想做一个项目 PRD 生成工具",
+    session: null,
+    stage: "questioning",
+    questions: [
+      {
+        questionId: "q_old",
+        title: "旧问题",
+        options: [{ label: "旧选项", value: "old" }],
+      },
+    ],
+  });
+
+  page.onModalIdeaInput({ detail: { value: "我想做一个小红书选题工具" } });
+
+  assert.deepEqual(page.data.questions, []);
+
+  await page.onRegenerateQuestions();
+
+  assert.deepEqual(calls, [
+    {
+      name: "createIncubationQuestions",
+      payload: { idea: "我想做一个小红书选题工具" },
+    },
+  ]);
+  assert.equal(page.data.stage, "questioning");
+  assert.equal(page.data.questions[0].questionId, "q_new");
+});
+
+test("regenerating questions with a blank idea does not call the backend", async () => {
+  const page = createPageInstance();
+  let callCount = 0;
+
+  page.client = {
+    async call() {
+      callCount += 1;
+      return { questions: [] };
+    },
+  };
+  page.setData({
+    modalVisible: true,
+    ideaInput: "",
+    session: null,
+    stage: "questioning",
+    questions: [],
+  });
+
+  await page.onRegenerateQuestions();
+
+  assert.equal(callCount, 0);
+});

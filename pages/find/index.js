@@ -1,52 +1,108 @@
 const {
+  createCloudFunctionClient,
+  createFriendlyErrorMessage,
+} = require("../../lib/cloud-functions");
+const {
   createIncubationSession,
   getCurrentQuestion,
   answerCurrentQuestion,
   goToPreviousQuestion,
-  canStartResearch,
-  generateProjectResult,
 } = require("../../lib/incubation-service");
-const {
-  createGeneratedProjectStore,
-} = require("../../lib/generated-project-store");
-const { withFormattedCreatedAt } = require("../../lib/display-format");
 const ToastModule = require("tdesign-miniprogram/toast/index");
 
 const showToast = ToastModule.default || ToastModule.showToast || ToastModule;
 
-const researchSteps = [
+const examples = [
+  { text: "AI 帮我整理小红书选题", icon: "book-open" },
+  { text: "给自由职业者做报价管理工具", icon: "money" },
+  { text: "帮程序员快速生成项目 PRD", icon: "file-edit" },
+  { text: "面向本地商家的会员小程序", icon: "shop" },
+];
+
+const researchStepLabels = [
   "正在联网查询国内外优秀产品",
   "正在对比产品优劣",
   "正在分析产品方向",
 ];
 
-function createResearchStepItems(activeStep, completedSteps) {
-  return researchSteps.map((label, index) => {
-    const done = completedSteps.indexOf(index) > -1;
+function createStageText(stage) {
+  const map = {
+    creating_questions: "正在补充关键信息",
+    questioning: "正在补充关键信息",
+    researching: "正在调研市场",
+    result: "已生成方向建议",
+    saving: "正在保存方向",
+  };
+
+  return map[stage] || "AI灵感孵化";
+}
+
+function createSelectedOptionMap(values) {
+  return (values || []).reduce((map, value) => {
+    map[value] = true;
+    return map;
+  }, {});
+}
+
+function normalizeOptions(options) {
+  return (options || []).map((option) => {
+    if (typeof option === "string") {
+      return {
+        label: option,
+        value: option,
+      };
+    }
+
+    const value = String(option.value || option.label || "");
     return {
-      label,
-      status: done ? "done" : activeStep === index ? "active" : "pending",
-      mark: done ? "✓" : "",
+      label: option.label || value,
+      value,
     };
   });
 }
 
-function hasAnswer(selectedOptions, customInput) {
+function normalizeQuestion(question, index) {
+  return {
+    questionId: question.questionId || question.id || `question_${index + 1}`,
+    title: question.title || `问题 ${index + 1}`,
+    description: question.description || "",
+    type: question.type === "multiple" ? "multiple" : "single",
+    options: normalizeOptions(question.options),
+    allowCustomInput: Boolean(question.allowCustomInput),
+    isRequired: question.isRequired !== false,
+  };
+}
+
+function normalizeQuestions(questions) {
+  return (questions || []).map(normalizeQuestion);
+}
+
+function createResearchSteps(activeStep) {
+  return researchStepLabels.map((label, index) => ({
+    label,
+    status: index < activeStep ? "done" : index === activeStep ? "active" : "",
+    done: index < activeStep,
+    active: index === activeStep,
+  }));
+}
+
+function hasCurrentAnswer(selectedOptions, customInput) {
   return selectedOptions.length > 0 || Boolean(customInput.trim());
 }
 
-function isLastQuestion(session) {
-  return (
-    Boolean(session) &&
-    session.currentQuestionIndex === session.questions.length - 1
-  );
+function formatRecentProject(project) {
+  return {
+    ...project,
+    summary:
+      project.entryDirection ||
+      project.conclusion ||
+      project.sourceIdea ||
+      "已生成方向建议",
+    createdAtText: project.createdAt || project.created_at || "",
+  };
 }
 
-function canGoPrevious(session) {
-  return Boolean(session) && session.currentQuestionIndex > 0;
-}
-
-function createOptionItems(question, selectedOptions) {
+function createLegacyOptionItems(question, selectedOptions) {
   if (!question) {
     return [];
   }
@@ -57,82 +113,97 @@ function createOptionItems(question, selectedOptions) {
   }));
 }
 
-function createQuestionAnswerState(question, answer) {
+function createLegacySessionState(session, answer) {
+  const currentQuestion = getCurrentQuestion(session);
   const selectedOptions = answer ? (answer.selectedOptions || []).slice() : [];
   const customInput = answer ? answer.customInput || "" : "";
 
   return {
-    selectedOptions,
-    currentOptions: createOptionItems(question, selectedOptions),
-    customInput,
-  };
-}
-
-function createQuestionSessionState(session, answer) {
-  const currentQuestion = getCurrentQuestion(session);
-
-  return Object.assign(createQuestionAnswerState(currentQuestion, answer), {
     session,
     currentQuestion,
-    canStartResearch: canStartResearch(session),
-    isLastQuestion: isLastQuestion(session),
-    canGoPrevious: canGoPrevious(session),
-  });
-}
-
-function createFreshSessionState(idea) {
-  return createQuestionSessionState(createIncubationSession(idea));
+    selectedOptions,
+    currentOptions: createLegacyOptionItems(currentQuestion, selectedOptions),
+    customInput,
+    canGoPrevious: session.currentQuestionIndex > 0,
+  };
 }
 
 Page({
   data: {
     ideaInput: "",
-    examples: [
-      { text: "小红书选题助手", icon: "book-open" },
-      { text: "自由职业报价", icon: "money" },
-      { text: "项目 PRD 生成", icon: "file-edit" },
-      { text: "商家会员小程序", icon: "shop" },
-    ],
+    ideaAutosize: { minRows: 4, maxRows: 7 },
+    customAutosize: { minRows: 2, maxRows: 4 },
+    examples,
     ideaSenderPresets: [{ name: "send", type: "icon" }],
     ideaSenderTextareaProps: { autosize: { minHeight: 164, maxHeight: 260 } },
     recentProjects: [],
     modalVisible: false,
-    modalStage: "question",
-    stageText: "正在补充关键信息",
+    stage: "idle",
+    stageText: "AI灵感孵化",
+    questions: [],
+    currentQuestionIndex: 0,
+    answers: [],
+    currentSelectedOptions: [],
+    selectedOptionMap: {},
+    currentCustomInput: "",
+    researchSteps: createResearchSteps(0),
+    activeResearchStep: 0,
+    projectResult: null,
+    errorMessage: "",
+    loadingRecent: false,
     session: null,
     currentQuestion: null,
     selectedOptions: [],
     currentOptions: [],
     customInput: "",
-    canStartResearch: false,
-    isLastQuestion: false,
     canGoPrevious: false,
-    researchSteps,
-    activeResearchStep: 0,
-    completedResearchSteps: [],
-    researchStepItems: createResearchStepItems(0, []),
+    modalStage: "question",
     generatedProject: null,
   },
 
   onLoad() {
-    this.projectStore = createGeneratedProjectStore();
+    this.client = createCloudFunctionClient(wx.cloud);
     this.researchTimer = null;
-    this.researchRunId = 0;
-    this.refreshRecentProjects();
+    this.incubationRunId = 0;
+    this.loadRecentProjects();
   },
 
   onShow() {
-    if (this.projectStore) {
-      this.refreshRecentProjects();
+    if (this.client) {
+      this.loadRecentProjects();
     }
   },
 
-  refreshRecentProjects() {
-    const recentProjects = this.projectStore
-      .getProjects()
-      .slice(0, 3)
-      .map(withFormattedCreatedAt);
-    this.setData({ recentProjects });
+  ensureClient() {
+    if (!this.client && typeof wx !== "undefined" && wx.cloud) {
+      this.client = createCloudFunctionClient(wx.cloud);
+    }
+
+    return this.client;
+  },
+
+  async loadRecentProjects() {
+    this.setData({ loadingRecent: true });
+
+    try {
+      const client = this.ensureClient();
+
+      if (!client) {
+        return;
+      }
+
+      const data = await client.call("listGeneratedProjects", {
+        page: 1,
+        page_size: 3,
+      });
+      this.setData({
+        recentProjects: (data.items || []).map(formatRecentProject),
+      });
+    } catch (error) {
+      this.setData({ errorMessage: createFriendlyErrorMessage(error) });
+    } finally {
+      this.setData({ loadingRecent: false });
+    }
   },
 
   onIdeaInput(event) {
@@ -141,13 +212,18 @@ Page({
     });
   },
 
-  onUseExample(event) {
+  onSelectExample(event) {
     this.setData({
       ideaInput: event.currentTarget.dataset.value,
+      errorMessage: "",
     });
   },
 
-  onStartIncubation(event) {
+  onUseExample(event) {
+    this.onSelectExample(event);
+  },
+
+  async onStartIncubation(event) {
     const nextIdea =
       event && event.detail && typeof event.detail.value === "string"
         ? event.detail.value.trimStart()
@@ -164,27 +240,133 @@ Page({
       return;
     }
 
-    this.stopResearchProgress();
+    const client = this.ensureClient();
+
+    if (!client) {
+      this.createRunId();
+      this.stopResearchProgress();
+      const session = createIncubationSession(idea);
+      this.setData({
+        ideaInput: idea,
+        modalVisible: true,
+        stage: "questioning",
+        stageText: createStageText("questioning"),
+        questions: normalizeQuestions(session.questions),
+        currentQuestionIndex: 0,
+        answers: [],
+        currentSelectedOptions: [],
+        selectedOptionMap: {},
+        currentCustomInput: "",
+        researchSteps: createResearchSteps(0),
+        activeResearchStep: 0,
+        projectResult: null,
+        errorMessage: "",
+        ...createLegacySessionState(session),
+      });
+      return;
+    }
 
     this.setData({
       ideaInput: nextIdea,
-      modalVisible: true,
-      modalStage: "question",
-      stageText: "正在补充关键信息",
-      ...createFreshSessionState(idea),
-      activeResearchStep: 0,
-      completedResearchSteps: [],
-      researchStepItems: createResearchStepItems(0, []),
-      generatedProject: null,
     });
+
+    await this.generateIncubationQuestions(idea, { showModal: true });
   },
 
-  createOptionItems(question, selectedOptions) {
-    return createOptionItems(question, selectedOptions);
+  async generateIncubationQuestions(idea, options = {}) {
+    const normalizedIdea = (idea || "").trim();
+
+    if (!normalizedIdea) {
+      showToast({
+        context: this,
+        selector: "#t-toast",
+        message: "先输入一个项目想法",
+        theme: "warning",
+      });
+      return;
+    }
+
+    const client = this.ensureClient();
+
+    if (!client) {
+      const session = createIncubationSession(normalizedIdea);
+      this.setData({
+        ideaInput: normalizedIdea,
+        modalVisible: options.showModal ? true : this.data.modalVisible,
+        stage: "questioning",
+        stageText: createStageText("questioning"),
+        questions: normalizeQuestions(session.questions),
+        currentQuestionIndex: 0,
+        answers: [],
+        currentSelectedOptions: [],
+        selectedOptionMap: {},
+        currentCustomInput: "",
+        researchSteps: createResearchSteps(0),
+        activeResearchStep: 0,
+        projectResult: null,
+        errorMessage: "",
+        ...createLegacySessionState(session),
+      });
+      return;
+    }
+
+    const runId = this.createRunId();
+    this.stopResearchProgress();
+    this.setData({
+      ideaInput: normalizedIdea,
+      modalVisible: options.showModal ? true : this.data.modalVisible,
+      stage: "creating_questions",
+      stageText: createStageText("creating_questions"),
+      questions: [],
+      currentQuestionIndex: 0,
+      answers: [],
+      currentSelectedOptions: [],
+      selectedOptionMap: {},
+      currentCustomInput: "",
+      researchSteps: createResearchSteps(0),
+      activeResearchStep: 0,
+      projectResult: null,
+      errorMessage: "",
+    });
+
+    try {
+      const data = await client.call("createIncubationQuestions", {
+        idea: normalizedIdea,
+      });
+      if (!this.isCurrentRun(runId)) {
+        return;
+      }
+
+      const questions = normalizeQuestions(data.questions);
+
+      if (!questions.length) {
+        throw new Error("AI 暂未生成追问问题，请稍后重试。");
+      }
+
+      this.setData({
+        stage: "questioning",
+        stageText: createStageText("questioning"),
+        questions,
+      });
+    } catch (error) {
+      if (!this.isCurrentRun(runId)) {
+        return;
+      }
+
+      this.setData({
+        stage: "questioning",
+        stageText: createStageText("questioning"),
+        errorMessage: createFriendlyErrorMessage(error),
+      });
+    }
+  },
+
+  onRegenerateQuestions() {
+    return this.generateIncubationQuestions(this.data.ideaInput);
   },
 
   onCloseModal() {
-    this.stopResearchProgress();
+    this.invalidateIncubationRun();
     this.setData({
       modalVisible: false,
     });
@@ -192,7 +374,7 @@ Page({
 
   onModalVisibleChange(event) {
     if (!event.detail.visible) {
-      this.stopResearchProgress();
+      this.invalidateIncubationRun();
     }
 
     this.setData({
@@ -200,75 +382,153 @@ Page({
     });
   },
 
-  onToggleOption(event) {
+  onSelectOption(event) {
     const value = event.currentTarget.dataset.value;
-    const question = this.data.currentQuestion;
+    const question = this.data.questions[this.data.currentQuestionIndex];
 
-    if (!question) {
+    if (!question || !value) {
       return;
     }
 
-    const selectedOptions = this.data.selectedOptions.slice();
+    const selectedOptions = this.data.currentSelectedOptions.slice();
     const selectedIndex = selectedOptions.indexOf(value);
 
-    if (question.type === "single") {
-      this.setData({
-        selectedOptions: [value],
-        currentOptions: this.createOptionItems(question, [value]),
-      });
-      return;
-    }
-
-    if (selectedIndex > -1) {
-      selectedOptions.splice(selectedIndex, 1);
+    if (question.type === "multiple") {
+      if (selectedIndex > -1) {
+        selectedOptions.splice(selectedIndex, 1);
+      } else {
+        selectedOptions.push(value);
+      }
     } else {
-      selectedOptions.push(value);
+      selectedOptions.splice(0, selectedOptions.length, value);
     }
 
     this.setData({
-      selectedOptions,
-      currentOptions: this.createOptionItems(question, selectedOptions),
+      currentSelectedOptions: selectedOptions,
+      selectedOptionMap: createSelectedOptionMap(selectedOptions),
+      errorMessage: "",
     });
+  },
+
+  onToggleOption(event) {
+    this.onSelectOption(event);
   },
 
   onCustomInput(event) {
     this.setData({
-      customInput: event.detail.value,
+      currentCustomInput: event.detail.value,
+      errorMessage: "",
     });
   },
 
   onModalIdeaInput(event) {
     const ideaInput = event.detail.value.trimStart();
+    this.invalidateIncubationRun();
 
-    this.stopResearchProgress();
+    if (this.data.session || !this.ensureClient()) {
+      const session = createIncubationSession(ideaInput);
+      this.setData({
+        ideaInput,
+        stage: "questioning",
+        stageText: createStageText("questioning"),
+        questions: normalizeQuestions(session.questions),
+        currentQuestionIndex: 0,
+        answers: [],
+        currentSelectedOptions: [],
+        selectedOptionMap: {},
+        currentCustomInput: "",
+        projectResult: null,
+        errorMessage: "",
+        ...createLegacySessionState(session),
+      });
+      return;
+    }
+
     this.setData({
       ideaInput,
-      modalStage: "question",
-      stageText: "正在补充关键信息",
-      ...createFreshSessionState(ideaInput),
-      activeResearchStep: 0,
-      completedResearchSteps: [],
-      researchStepItems: createResearchStepItems(0, []),
+      stage: "questioning",
+      stageText: createStageText("questioning"),
+      questions: [],
+      currentQuestionIndex: 0,
+      answers: [],
+      currentSelectedOptions: [],
+      selectedOptionMap: {},
+      currentCustomInput: "",
+      projectResult: null,
       generatedProject: null,
+      errorMessage: "",
+    });
+  },
+
+  saveCurrentAnswer() {
+    const question = this.data.questions[this.data.currentQuestionIndex];
+    const answers = this.data.answers.slice();
+
+    if (!question) {
+      return answers;
+    }
+
+    answers[this.data.currentQuestionIndex] = {
+      questionId: question.questionId,
+      questionTitle: question.title,
+      selectedOptions: this.data.currentSelectedOptions.slice(),
+      customInput: this.data.currentCustomInput.trim(),
+    };
+
+    this.setData({ answers });
+    return answers;
+  },
+
+  restoreQuestionState(questionIndex, answers) {
+    const answer = answers[questionIndex] || {};
+    const selectedOptions = answer.selectedOptions || [];
+
+    this.setData({
+      currentQuestionIndex: questionIndex,
+      currentSelectedOptions: selectedOptions,
+      selectedOptionMap: createSelectedOptionMap(selectedOptions),
+      currentCustomInput: answer.customInput || "",
+      errorMessage: "",
     });
   },
 
   onPreviousQuestion() {
-    if (!this.data.canGoPrevious) {
+    if (this.data.session) {
+      if (this.data.session.currentQuestionIndex <= 0) {
+        return;
+      }
+
+      const answerToRestore =
+        this.data.session.answers[this.data.session.answers.length - 1];
+      const previousSession = goToPreviousQuestion(this.data.session);
+      this.setData({
+        ...createLegacySessionState(previousSession, answerToRestore),
+      });
       return;
     }
 
-    const answerToRestore =
-      this.data.session.answers[this.data.session.answers.length - 1];
-    const previousSession = goToPreviousQuestion(this.data.session);
+    if (this.data.currentQuestionIndex <= 0) {
+      return;
+    }
 
-    this.setData({
-      ...createQuestionSessionState(previousSession, answerToRestore),
-    });
+    const answers = this.saveCurrentAnswer();
+    this.restoreQuestionState(this.data.currentQuestionIndex - 1, answers);
   },
 
   onNextQuestion() {
-    if (!hasAnswer(this.data.selectedOptions, this.data.customInput)) {
+    const selectedOptions = this.data.session
+      ? this.data.selectedOptions
+      : this.data.currentSelectedOptions;
+    const customInput = this.data.session
+      ? this.data.customInput
+      : this.data.currentCustomInput;
+
+    if (
+      !hasCurrentAnswer(
+        selectedOptions,
+        customInput,
+      )
+    ) {
       showToast({
         context: this,
         selector: "#t-toast",
@@ -278,118 +538,137 @@ Page({
       return;
     }
 
-    const answeredLastQuestion = this.data.isLastQuestion;
-    const nextSession = answerCurrentQuestion(this.data.session, {
-      selectedOptions: this.data.selectedOptions,
-      customInput: this.data.customInput.trim(),
-    });
-
-    if (answeredLastQuestion) {
-      this.setData({
-        session: nextSession,
-        selectedOptions: [],
-        customInput: "",
-        canStartResearch: true,
-        isLastQuestion: false,
-        canGoPrevious: canGoPrevious(nextSession),
+    if (this.data.session) {
+      const nextSession = answerCurrentQuestion(this.data.session, {
+        selectedOptions,
+        customInput: customInput.trim(),
       });
-      this.startResearchProgress();
+      this.setData({
+        ...createLegacySessionState(nextSession),
+      });
       return;
     }
 
-    this.setData({
-      ...createQuestionSessionState(nextSession),
-    });
+    const answers = this.saveCurrentAnswer();
+    const nextIndex = this.data.currentQuestionIndex + 1;
+
+    if (nextIndex >= this.data.questions.length) {
+      this.startResearch(answers);
+      return;
+    }
+
+    this.restoreQuestionState(nextIndex, answers);
   },
 
-  startResearchProgress() {
+  async startResearch(answers) {
+    const runId = this.createRunId();
     this.stopResearchProgress();
-    this.researchRunId += 1;
-    const runId = this.researchRunId;
-
     this.setData({
-      modalStage: "research",
-      stageText: "正在调研市场",
+      stage: "researching",
+      stageText: createStageText("researching"),
       activeResearchStep: 0,
-      completedResearchSteps: [],
-      researchStepItems: createResearchStepItems(0, []),
+      researchSteps: createResearchSteps(0),
+      errorMessage: "",
     });
 
-    this.runResearchStep(0, runId);
-  },
-
-  runResearchStep(stepIndex, runId) {
-    if (runId !== this.researchRunId || !this.data.modalVisible) {
-      return;
-    }
-
-    if (stepIndex >= this.data.researchSteps.length) {
-      const generatedProject = generateProjectResult(this.data.session);
-      this.researchTimer = null;
-      this.setData({
-        modalStage: "result",
-        stageText: "已生成方向建议",
-        generatedProject,
-      });
-      return;
-    }
-
-    this.setData({
-      activeResearchStep: stepIndex,
-      researchStepItems: createResearchStepItems(
-        stepIndex,
-        this.data.completedResearchSteps,
-      ),
-    });
-
-    this.researchTimer = setTimeout(() => {
-      if (runId !== this.researchRunId || !this.data.modalVisible) {
+    this.researchTimer = setInterval(() => {
+      if (!this.isCurrentRun(runId) || this.data.stage !== "researching") {
         return;
       }
 
-      const completedResearchSteps =
-        this.data.completedResearchSteps.concat(stepIndex);
+      const nextStep = Math.min(
+        this.data.activeResearchStep + 1,
+        researchStepLabels.length - 1,
+      );
       this.setData({
-        completedResearchSteps,
-        researchStepItems: createResearchStepItems(
-          stepIndex,
-          completedResearchSteps,
-        ),
+        activeResearchStep: nextStep,
+        researchSteps: createResearchSteps(nextStep),
       });
-      this.runResearchStep(stepIndex + 1, runId);
-    }, 650);
-  },
+    }, 1200);
 
-  stopResearchProgress() {
-    this.researchRunId += 1;
+    try {
+      const data = await this.client.call("generateIncubationAnalysis", {
+        idea: this.data.ideaInput.trim(),
+        answers,
+      });
+      if (!this.isCurrentRun(runId)) {
+        return;
+      }
 
-    if (this.researchTimer) {
-      clearTimeout(this.researchTimer);
-      this.researchTimer = null;
+      this.stopResearchProgress();
+      this.setData({
+        stage: "result",
+        stageText: createStageText("result"),
+        activeResearchStep: researchStepLabels.length,
+        researchSteps: createResearchSteps(researchStepLabels.length),
+        projectResult: data.project,
+      });
+    } catch (error) {
+      if (!this.isCurrentRun(runId)) {
+        return;
+      }
+
+      this.stopResearchProgress();
+      this.setData({
+        stage: "questioning",
+        stageText: createStageText("questioning"),
+        errorMessage: createFriendlyErrorMessage(error),
+      });
     }
   },
 
   onRegenerate() {
-    this.startResearchProgress();
+    const answers = this.data.answers.filter(Boolean);
+
+    if (!answers.length) {
+      this.setData({
+        stage: "questioning",
+        stageText: createStageText("questioning"),
+      });
+      return;
+    }
+
+    this.startResearch(answers);
   },
 
   onModifyDirection() {
-    const idea =
-      this.data.ideaInput || (this.data.session && this.data.session.idea);
+    this.invalidateIncubationRun();
 
-    this.stopResearchProgress();
+    if (this.data.session) {
+      const session = createIncubationSession(this.data.ideaInput);
+      this.setData({
+        stage: "questioning",
+        stageText: createStageText("questioning"),
+        projectResult: null,
+        errorMessage: "",
+        ...createLegacySessionState(session),
+      });
+      return;
+    }
+
+    const firstAnswer = this.data.answers[0] || {};
+    const selectedOptions = firstAnswer.selectedOptions || [];
+
     this.setData({
-      modalStage: "question",
-      stageText: "正在补充关键信息",
-      ...createFreshSessionState(idea),
-      generatedProject: null,
+      stage: "questioning",
+      stageText: createStageText("questioning"),
+      currentQuestionIndex: 0,
+      currentSelectedOptions: selectedOptions,
+      selectedOptionMap: createSelectedOptionMap(selectedOptions),
+      currentCustomInput: firstAnswer.customInput || "",
+      projectResult: null,
+      errorMessage: "",
     });
   },
 
-  onConfirmDirection() {
-    const generatedProject = this.data.generatedProject;
+  onEditDirection() {
+    this.onModifyDirection();
+  },
 
-    if (!generatedProject) {
+  async onConfirmProject() {
+    const project = this.data.projectResult;
+
+    if (!project) {
       showToast({
         context: this,
         selector: "#t-toast",
@@ -399,41 +678,56 @@ Page({
       return;
     }
 
-    try {
-      this.projectStore.saveProject(generatedProject);
-    } catch (error) {
-      showToast({
-        context: this,
-        selector: "#t-toast",
-        message: "保存失败，请稍后重试",
-        theme: "error",
-      });
-      return;
-    }
-
     this.setData({
-      modalVisible: false,
-      generatedProject: null,
+      stage: "saving",
+      stageText: createStageText("saving"),
+      errorMessage: "",
     });
 
-    wx.switchTab({
-      url: "/pages/workspace/index",
-      success: () => {
-        this.refreshRecentProjects();
-      },
-      fail: () => {
-        showToast({
-          context: this,
-          selector: "#t-toast",
-          message: "已保存，可到工作台查看",
-          theme: "success",
-        });
-        this.refreshRecentProjects();
-      },
-    });
+    try {
+      await this.client.call("saveGeneratedProject", { project });
+      this.setData({
+        modalVisible: false,
+      });
+      wx.switchTab({
+        url: "/pages/workspace/index",
+      });
+    } catch (error) {
+      this.setData({
+        stage: "result",
+        stageText: createStageText("result"),
+        projectResult: project,
+        errorMessage: createFriendlyErrorMessage(error),
+      });
+    }
+  },
+
+  onConfirmDirection() {
+    this.onConfirmProject();
   },
 
   onUnload() {
+    this.invalidateIncubationRun();
+  },
+
+  createRunId() {
+    this.incubationRunId = (this.incubationRunId || 0) + 1;
+    return this.incubationRunId;
+  },
+
+  isCurrentRun(runId) {
+    return this.incubationRunId === runId && this.data.modalVisible;
+  },
+
+  invalidateIncubationRun() {
+    this.createRunId();
     this.stopResearchProgress();
+  },
+
+  stopResearchProgress() {
+    if (this.researchTimer) {
+      clearInterval(this.researchTimer);
+      this.researchTimer = null;
+    }
   },
 });

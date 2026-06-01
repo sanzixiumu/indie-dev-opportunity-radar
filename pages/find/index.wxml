@@ -4,6 +4,8 @@
     <t-text t-class="hero-subtitle" theme="secondary" content="输入一个项目想法，帮你找到可切入方向" custom-style="display: block;" />
   </view>
 
+  <view wx:if="{{errorMessage && !modalVisible}}" class="error-card">{{errorMessage}}</view>
+
   <view class="prompt-panel">
     <view class="prompt-topline">
       <view class="prompt-icon">
@@ -59,7 +61,13 @@
       <t-icon name="rocket" size="32rpx" color="#4648d4" />
       <view class="section-title">最近孵化</view>
     </view>
-    <block wx:if="{{recentProjects.length}}">
+    <view wx:if="{{loadingRecent}}" class="recent-card">
+      <view class="recent-text-row">
+        <t-loading size="32rpx" theme="circular" />
+        <view class="recent-text">正在加载最近方向...</view>
+      </view>
+    </view>
+    <block wx:elif="{{recentProjects.length}}">
       <view wx:for="{{recentProjects}}" wx:key="id" class="recent-card" style="animation-delay: {{index * 60}}ms;">
         <view class="recent-title-row">
           <view class="recent-icon">
@@ -69,7 +77,7 @@
         </view>
         <view class="recent-text-row">
           <t-icon name="flag" size="24rpx" color="#767586" />
-          <view class="recent-text">{{item.conclusion}}</view>
+          <view class="recent-text">{{item.summary}}</view>
         </view>
         <view class="recent-meta">
           <t-icon name="time" size="22rpx" color="#9a98a8" />
@@ -109,7 +117,16 @@
   </view>
 
   <scroll-view class="modal-body" scroll-y="true">
-    <block wx:if="{{modalStage === 'question' && currentQuestion}}">
+    <view wx:if="{{errorMessage}}" class="error-card">{{errorMessage}}</view>
+
+    <block wx:if="{{stage === 'creating_questions'}}">
+      <view class="progress-card loading-card">
+        <t-loading size="48rpx" theme="circular" />
+        <view class="progress-text">正在生成追问问题...</view>
+      </view>
+    </block>
+
+    <block wx:if="{{stage === 'questioning'}}">
       <view class="idea-edit-card">
         <view class="idea-edit-title">项目想法</view>
         <t-textarea
@@ -117,108 +134,135 @@
           value="{{ideaInput}}"
           placeholder="调整你的项目方向"
           maxlength="300"
-          autosize="{{true}}"
+          autosize="{{ideaAutosize}}"
           indicator="{{true}}"
           bind:change="onModalIdeaInput"
         />
       </view>
-      <view class="question-card">
-        <view class="question-title">{{currentQuestion.title}}</view>
-        <view class="question-desc">{{currentQuestion.description}}</view>
-        <view class="option-list">
-          <t-tag
-            wx:for="{{currentOptions}}"
-            wx:key="label"
-            t-class="option-item"
-            theme="{{item.selected ? 'primary' : 'default'}}"
-            variant="{{item.selected ? 'light' : 'outline'}}"
-            size="large"
-            data-value="{{item.label}}"
-            bind:click="onToggleOption"
-          >
-            {{item.label}}
-          </t-tag>
+      <block wx:if="{{questions.length}}">
+        <view class="question-card">
+          <view class="question-title">{{questions[currentQuestionIndex].title}}</view>
+          <view class="question-desc">{{questions[currentQuestionIndex].description}}</view>
+          <view class="option-list">
+            <t-tag
+              wx:for="{{questions[currentQuestionIndex].options}}"
+              wx:key="value"
+              t-class="option-item {{selectedOptionMap[item.value] ? 'option-selected' : ''}}"
+              theme="{{selectedOptionMap[item.value] ? 'primary' : 'default'}}"
+              variant="{{selectedOptionMap[item.value] ? 'light' : 'outline'}}"
+              size="large"
+              data-value="{{item.value}}"
+              bind:click="onSelectOption"
+            >
+              {{item.label}}
+            </t-tag>
+          </view>
+          <t-textarea
+            wx:if="{{questions[currentQuestionIndex].allowCustomInput}}"
+            t-class="custom-input"
+            value="{{currentCustomInput}}"
+            placeholder="也可以补充你的具体情况"
+            autosize="{{customAutosize}}"
+            indicator="{{false}}"
+            bind:change="onCustomInput"
+          />
         </view>
-        <t-textarea
-          wx:if="{{currentQuestion.allowCustomInput}}"
-          t-class="custom-input"
-          value="{{customInput}}"
-          placeholder="也可以补充你的具体情况"
-          autosize="{{true}}"
-          indicator="{{false}}"
-          bind:change="onCustomInput"
-        />
-      </view>
+      </block>
+      <block wx:else>
+        <view class="question-card">
+          <view class="question-title">需要重新生成追问</view>
+          <view class="question-desc">项目想法已更新，重新生成追问后再继续孵化。</view>
+        </view>
+      </block>
     </block>
 
-    <block wx:if="{{modalStage === 'research'}}">
+    <block wx:if="{{stage === 'researching'}}">
       <view class="progress-card">
-        <view wx:for="{{researchStepItems}}" wx:key="label" class="progress-row">
+        <view wx:for="{{researchSteps}}" wx:key="label" class="progress-row">
           <view class="progress-dot {{item.status}}">
-            <t-icon wx:if="{{item.status === 'done'}}" name="check" size="28rpx" />
-            <t-loading wx:if="{{item.status === 'active'}}" size="32rpx" theme="circular" />
+            <t-icon wx:if="{{item.done}}" name="check" size="28rpx" />
+            <t-loading wx:if="{{item.active}}" size="32rpx" theme="circular" />
           </view>
           <view class="progress-text">{{item.label}}</view>
         </view>
       </view>
     </block>
 
-    <block wx:if="{{modalStage === 'result' && generatedProject}}">
+    <block wx:if="{{stage === 'result' && projectResult}}">
       <view class="result-card">
-        <view class="result-title">{{generatedProject.title}}</view>
+        <view class="result-title">{{projectResult.title}}</view>
         <view class="result-section">
           <view class="result-heading">方向结论</view>
-          <view class="result-text">{{generatedProject.conclusion}}</view>
+          <view class="result-text">{{projectResult.conclusion}}</view>
+        </view>
+        <view class="result-section">
+          <view class="result-heading">推荐切入方向</view>
+          <view class="result-text">{{projectResult.entryDirection}}</view>
+        </view>
+        <view class="result-section">
+          <view class="result-heading">可切入优势</view>
+          <view wx:for="{{projectResult.advantages}}" wx:key="*this" class="bullet-line">{{item}}</view>
         </view>
         <view class="result-section">
           <view class="result-heading">国内产品</view>
-          <view wx:for="{{generatedProject.domesticProducts}}" wx:key="name" class="product-row">
+          <view wx:for="{{projectResult.domesticProducts}}" wx:key="name" class="product-row">
             <view class="product-name">{{item.name}}</view>
             <view class="product-text">{{item.positioning}}</view>
             <view class="product-text">优势：{{item.strengths}}</view>
             <view class="product-text">短板：{{item.weaknesses}}</view>
+            <view wx:if="{{item.evidence}}" class="product-text">依据：{{item.evidence}}</view>
           </view>
         </view>
         <view class="result-section">
           <view class="result-heading">国外产品</view>
-          <view wx:for="{{generatedProject.globalProducts}}" wx:key="name" class="product-row">
+          <view wx:for="{{projectResult.globalProducts}}" wx:key="name" class="product-row">
             <view class="product-name">{{item.name}}</view>
             <view class="product-text">{{item.positioning}}</view>
             <view class="product-text">优势：{{item.strengths}}</view>
             <view class="product-text">短板：{{item.weaknesses}}</view>
+            <view wx:if="{{item.evidence}}" class="product-text">依据：{{item.evidence}}</view>
           </view>
         </view>
         <view class="result-section">
-          <view class="result-heading">推荐切入方向和可切入优势</view>
-          <view class="result-text">{{generatedProject.entryDirection}}</view>
-          <view wx:for="{{generatedProject.advantages}}" wx:key="*this" class="bullet-line">{{item}}</view>
-        </view>
-        <view class="result-section">
           <view class="result-heading">风险</view>
-          <view wx:for="{{generatedProject.risks}}" wx:key="description" class="risk-row">
+          <view wx:for="{{projectResult.risks}}" wx:key="description" class="risk-row">
             <view class="risk-desc">{{item.description}}</view>
             <view class="risk-source">来源：{{item.source}}</view>
           </view>
         </view>
         <view class="result-section">
           <view class="result-heading">建议</view>
-          <view wx:for="{{generatedProject.suggestions}}" wx:key="*this" class="bullet-line">{{item}}</view>
+          <view wx:for="{{projectResult.suggestions}}" wx:key="action" class="bullet-line">{{item.priority}} · {{item.action}} · {{item.expectedSignal}}</view>
+        </view>
+        <view wx:if="{{projectResult.researchSources && projectResult.researchSources.length}}" class="result-section">
+          <view class="result-heading">调研来源</view>
+          <view wx:for="{{projectResult.researchSources}}" wx:key="title" class="source-row">
+            <view class="product-name">{{item.title}}</view>
+            <view class="product-text">{{item.summary}}</view>
+            <view class="source-url">{{item.url}}</view>
+          </view>
         </view>
       </view>
     </block>
   </scroll-view>
 
   <view class="modal-actions">
-    <block wx:if="{{modalStage === 'question'}}">
-      <t-button t-class="secondary-button" theme="default" variant="outline" disabled="{{!canGoPrevious}}" bind:tap="onPreviousQuestion">上一步</t-button>
+    <block wx:if="{{stage === 'questioning' && questions.length}}">
+      <t-button t-class="secondary-button" theme="default" variant="outline" disabled="{{currentQuestionIndex === 0}}" bind:tap="onPreviousQuestion">上一步</t-button>
       <t-button t-class="action-primary" theme="primary" bind:tap="onNextQuestion">
-        {{isLastQuestion ? '开始调研市场' : '下一步'}}
+        {{currentQuestionIndex === questions.length - 1 ? '开始调研市场' : '下一步'}}
       </t-button>
     </block>
-    <block wx:if="{{modalStage === 'result'}}">
+    <block wx:if="{{stage === 'questioning' && !questions.length}}">
+      <t-button t-class="action-primary" theme="primary" disabled="{{!ideaInput}}" bind:tap="onRegenerateQuestions">重新生成追问</t-button>
+    </block>
+    <block wx:if="{{stage === 'result'}}">
       <t-button t-class="secondary-button" theme="default" variant="outline" bind:tap="onRegenerate">重新生成</t-button>
-      <t-button t-class="secondary-button" theme="default" variant="outline" bind:tap="onModifyDirection">修改方向</t-button>
-      <t-button t-class="action-primary" theme="primary" bind:tap="onConfirmDirection">确定方向</t-button>
+      <t-button t-class="secondary-button" theme="default" variant="outline" bind:tap="onEditDirection">修改方向</t-button>
+      <t-button t-class="action-primary" theme="primary" bind:tap="onConfirmProject">确定方向</t-button>
+    </block>
+    <block wx:if="{{stage === 'saving'}}">
+      <t-button t-class="action-primary" theme="primary" loading="{{true}}">正在保存</t-button>
     </block>
   </view>
 </t-popup>

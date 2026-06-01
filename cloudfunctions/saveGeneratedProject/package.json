@@ -1,0 +1,25 @@
+{
+  "name": "save-generated-project",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@cloudbase/node-sdk": "^3.18.1",
+    "axios": "^1.13.2",
+    "dayjs": "^1.11.21",
+    "dotenv": "^17.2.3",
+    "nanoid": "^5.1.6",
+    "openai": "^6.9.1",
+    "wx-server-sdk": "^3.0.1",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.0",
+    "prettier": "^3.6.2",
+    "typescript": "^6.0.3"
+  }
+}
