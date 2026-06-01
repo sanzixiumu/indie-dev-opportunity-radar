@@ -28,6 +28,10 @@ function createResearchStepItems(activeStep, completedSteps) {
   });
 }
 
+function hasAnswer(selectedOptions, customInput) {
+  return selectedOptions.length > 0 || Boolean(customInput.trim());
+}
+
 Page({
   data: {
     ideaInput: "",
@@ -119,5 +123,177 @@ Page({
       label,
       selected: selectedOptions.indexOf(label) > -1
     }));
+  },
+
+  onCloseModal() {
+    this.setData({
+      modalVisible: false
+    });
+  },
+
+  onModalVisibleChange(event) {
+    this.setData({
+      modalVisible: event.detail.visible
+    });
+  },
+
+  onToggleOption(event) {
+    const value = event.currentTarget.dataset.value;
+    const question = this.data.currentQuestion;
+
+    if (!question) {
+      return;
+    }
+
+    const selectedOptions = this.data.selectedOptions.slice();
+    const selectedIndex = selectedOptions.indexOf(value);
+
+    if (question.type === "single") {
+      this.setData({
+        selectedOptions: [value],
+        currentOptions: this.createOptionItems(question, [value])
+      });
+      return;
+    }
+
+    if (selectedIndex > -1) {
+      selectedOptions.splice(selectedIndex, 1);
+    } else {
+      selectedOptions.push(value);
+    }
+
+    this.setData({
+      selectedOptions,
+      currentOptions: this.createOptionItems(question, selectedOptions)
+    });
+  },
+
+  onCustomInput(event) {
+    this.setData({
+      customInput: event.detail.value
+    });
+  },
+
+  onPreviousQuestion() {
+    const previousSession = goToPreviousQuestion(this.data.session);
+    const currentQuestion = getCurrentQuestion(previousSession);
+
+    this.setData({
+      session: previousSession,
+      currentQuestion,
+      selectedOptions: [],
+      currentOptions: this.createOptionItems(currentQuestion, []),
+      customInput: "",
+      canStartResearch: canStartResearch(previousSession)
+    });
+  },
+
+  onNextQuestion() {
+    if (this.data.canStartResearch) {
+      this.startResearchProgress();
+      return;
+    }
+
+    if (!hasAnswer(this.data.selectedOptions, this.data.customInput)) {
+      showToast({ context: this, selector: "#t-toast", message: "请选择或补充一点信息", theme: "warning" });
+      return;
+    }
+
+    const currentQuestion = this.data.currentQuestion;
+    const nextSession = answerCurrentQuestion(this.data.session, {
+      selectedOptions: this.data.selectedOptions,
+      customInput: this.data.customInput.trim()
+    });
+    const nextCanStartResearch = canStartResearch(nextSession);
+    const nextQuestion = nextCanStartResearch ? currentQuestion : getCurrentQuestion(nextSession);
+
+    this.setData({
+      session: nextSession,
+      currentQuestion: nextQuestion,
+      selectedOptions: [],
+      currentOptions: this.createOptionItems(nextQuestion, []),
+      customInput: "",
+      canStartResearch: nextCanStartResearch
+    });
+  },
+
+  startResearchProgress() {
+    this.setData({
+      modalStage: "research",
+      stageText: "正在调研市场",
+      activeResearchStep: 0,
+      completedResearchSteps: [],
+      researchStepItems: createResearchStepItems(0, [])
+    });
+
+    this.runResearchStep(0);
+  },
+
+  runResearchStep(stepIndex) {
+    if (stepIndex >= this.data.researchSteps.length) {
+      const generatedProject = generateProjectResult(this.data.session);
+      this.setData({
+        modalStage: "result",
+        stageText: "已生成方向建议",
+        generatedProject
+      });
+      return;
+    }
+
+    this.setData({
+      activeResearchStep: stepIndex,
+      researchStepItems: createResearchStepItems(stepIndex, this.data.completedResearchSteps)
+    });
+
+    setTimeout(() => {
+      const completedResearchSteps = this.data.completedResearchSteps.concat(stepIndex);
+      this.setData({
+        completedResearchSteps,
+        researchStepItems: createResearchStepItems(stepIndex, completedResearchSteps)
+      });
+      this.runResearchStep(stepIndex + 1);
+    }, 650);
+  },
+
+  onRegenerate() {
+    this.startResearchProgress();
+  },
+
+  onModifyDirection() {
+    const editableSession = canStartResearch(this.data.session)
+      ? goToPreviousQuestion(this.data.session)
+      : this.data.session;
+    const currentQuestion = getCurrentQuestion(editableSession);
+
+    this.setData({
+      session: editableSession,
+      modalStage: "question",
+      stageText: "正在补充关键信息",
+      currentQuestion,
+      selectedOptions: [],
+      currentOptions: this.createOptionItems(currentQuestion, []),
+      customInput: "",
+      canStartResearch: canStartResearch(editableSession),
+      generatedProject: null
+    });
+  },
+
+  onConfirmDirection() {
+    this.projectStore.saveProject(this.data.generatedProject);
+    this.setData({
+      modalVisible: false,
+      generatedProject: null
+    });
+
+    wx.switchTab({
+      url: "/pages/workspace/index",
+      success: () => {
+        this.refreshRecentProjects();
+      },
+      fail: () => {
+        showToast({ context: this, selector: "#t-toast", message: "已保存，可到工作台查看", theme: "success" });
+        this.refreshRecentProjects();
+      }
+    });
   }
 });
