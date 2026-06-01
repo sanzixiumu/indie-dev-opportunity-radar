@@ -1,7 +1,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const { createGetUserContext } = require("../handler");
+const { createGetUserContext } = require("../../cloudfunctions/getUserContext/handler");
 
 function createCollection(records, writes) {
   return {
@@ -52,18 +52,21 @@ function createDb(recordsByCollection, writesByCollection = {}) {
 
 test("returns the existing user context without creating a duplicate user", async () => {
   const writesByCollection = {};
-  const db = createDb({
-    users: [
-      {
-        user_id: "user_existing",
-        openid: "openid_123",
-        membership_type: "free",
-        membership_expired_at: null,
-        created_at: "2026-06-01T00:00:00.000Z",
-        updated_at: "2026-06-01T00:00:00.000Z"
-      }
-    ]
-  }, writesByCollection);
+  const db = createDb(
+    {
+      users: [
+        {
+          user_id: "user_existing",
+          openid: "openid_123",
+          membership_type: "free",
+          membership_expired_at: null,
+          created_at: "2026-06-01T00:00:00.000Z",
+          updated_at: "2026-06-01T00:00:00.000Z"
+        }
+      ]
+    },
+    writesByCollection
+  );
 
   const main = createGetUserContext({
     db,
@@ -153,4 +156,78 @@ test("creates a free user when openid is seen for the first time", async () => {
       last_login_at: "2026-06-01T12:00:00.000Z"
     }
   ]);
+});
+
+test("stores WeChat profile fields when creating a new user", async () => {
+  const writesByCollection = {};
+  const db = createDb({ users: [] }, writesByCollection);
+
+  const main = createGetUserContext({
+    db,
+    getWXContext: () => ({
+      OPENID: "openid_with_profile",
+      APPID: "app_123"
+    }),
+    now: () => "2026-06-01T12:00:00.000Z",
+    createId: () => "user_with_profile"
+  });
+
+  const result = await main(
+    {
+      userInfo: {
+        nickName: "独立开发者 A",
+        avatarUrl: "https://example.com/avatar-a.png"
+      }
+    },
+    {}
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.user.nickname, "独立开发者 A");
+  assert.equal(result.data.user.avatar_url, "https://example.com/avatar-a.png");
+  assert.equal(writesByCollection.users[0].nickname, "独立开发者 A");
+  assert.equal(writesByCollection.users[0].avatar_url, "https://example.com/avatar-a.png");
+});
+
+test("updates WeChat profile fields for an existing user", async () => {
+  const existingUser = {
+    user_id: "user_existing",
+    openid: "openid_profile_update",
+    nickname: "旧昵称",
+    avatar_url: "https://example.com/old.png",
+    membership_type: "free",
+    membership_expired_at: null,
+    created_at: "2026-06-01T00:00:00.000Z",
+    updated_at: "2026-06-01T00:00:00.000Z",
+    last_login_at: "2026-06-01T00:00:00.000Z"
+  };
+  const db = createDb({
+    users: [existingUser]
+  });
+
+  const main = createGetUserContext({
+    db,
+    getWXContext: () => ({
+      OPENID: "openid_profile_update",
+      APPID: "app_123"
+    }),
+    now: () => "2026-06-01T12:00:00.000Z",
+    createId: () => "user_new"
+  });
+
+  const result = await main(
+    {
+      userInfo: {
+        nickName: "新昵称",
+        avatarUrl: "https://example.com/new.png"
+      }
+    },
+    {}
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.user.nickname, "新昵称");
+  assert.equal(result.data.user.avatar_url, "https://example.com/new.png");
+  assert.equal(existingUser.nickname, "新昵称");
+  assert.equal(existingUser.avatar_url, "https://example.com/new.png");
 });

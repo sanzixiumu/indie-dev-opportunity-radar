@@ -22,6 +22,8 @@ const DEFAULT_QUOTAS = {
  *   membership_type?: PlanType,
  *   plan_type?: PlanType,
  *   membership_expired_at?: string | null,
+ *   nickname?: string,
+ *   avatar_url?: string,
  *   created_at?: string,
  *   updated_at?: string,
  *   last_login_at?: string
@@ -56,6 +58,46 @@ const DEFAULT_QUOTAS = {
  */
 function createRequestId(now) {
   return `req_${now().replace(/[-:.TZ]/g, "")}`;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {value is Record<string, unknown>}
+ */
+function isRecord(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+/**
+ * @param {unknown} value
+ */
+function readNonEmptyString(value) {
+  return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+/**
+ * @param {unknown} event
+ * @returns {Pick<UserRecord, "nickname" | "avatar_url">}
+ */
+function getProfileFields(event) {
+  if (!isRecord(event) || !isRecord(event.userInfo)) {
+    return {};
+  }
+
+  const userInfo = event.userInfo;
+  const nickname = readNonEmptyString(userInfo.nickName) || readNonEmptyString(userInfo.nickname);
+  const avatarUrl = readNonEmptyString(userInfo.avatarUrl) || readNonEmptyString(userInfo.avatar_url);
+  const profileFields = {};
+
+  if (nickname) {
+    profileFields.nickname = nickname;
+  }
+
+  if (avatarUrl) {
+    profileFields.avatar_url = avatarUrl;
+  }
+
+  return profileFields;
 }
 
 /**
@@ -113,10 +155,11 @@ function createMembership(user) {
  * }>}
  */
 function createGetUserContext({ db, getWXContext, now, createId }) {
-  return async (_event, _context) => {
+  return async (event, _context) => {
     const requestId = createRequestId(now);
     const wxContext = getWXContext();
     const openid = wxContext.OPENID;
+    const profileFields = getProfileFields(event);
 
     if (!openid) {
       return {
@@ -143,20 +186,23 @@ function createGetUserContext({ db, getWXContext, now, createId }) {
         membership_expired_at: null,
         created_at: timestamp,
         updated_at: timestamp,
-        last_login_at: timestamp
+        last_login_at: timestamp,
+        ...profileFields
       };
       await users.add({ data: user });
     } else {
+      const updateData = {
+        updated_at: timestamp,
+        last_login_at: timestamp,
+        ...profileFields
+      };
+
       await users.where({ openid }).update({
-        data: {
-          updated_at: timestamp,
-          last_login_at: timestamp
-        }
+        data: updateData
       });
       user = {
         ...user,
-        updated_at: timestamp,
-        last_login_at: timestamp
+        ...updateData
       };
     }
 
