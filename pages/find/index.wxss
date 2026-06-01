@@ -1,1 +1,293 @@
+.find-page {
+  padding-bottom: 96rpx;
+}
 
+.hero {
+  margin-bottom: 30rpx;
+}
+
+.idea-card {
+  padding: 28rpx;
+  border: 1rpx solid #e5e7eb;
+  border-radius: 16rpx;
+  background: #ffffff;
+}
+
+.idea-input {
+  margin-bottom: 24rpx;
+}
+
+.section {
+  margin-top: 34rpx;
+}
+
+.section-title {
+  margin-bottom: 16rpx;
+  color: #111827;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.example-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16rpx;
+}
+
+.example-chip {
+  min-height: 72rpx;
+  padding: 14rpx;
+  box-sizing: border-box;
+  white-space: normal;
+}
+
+.recent-card {
+  margin-top: 16rpx;
+  padding: 22rpx;
+  border: 1rpx solid #e5e7eb;
+  border-radius: 14rpx;
+  background: #ffffff;
+}
+
+.recent-title {
+  color: #111827;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.recent-text,
+.empty-line,
+.ai-note {
+  color: #6b7280;
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+
+.recent-text {
+  margin-top: 8rpx;
+}
+
+.recent-meta {
+  margin-top: 10rpx;
+  color: #9ca3af;
+  font-size: 22rpx;
+}
+
+.ai-note {
+  margin-top: 36rpx;
+}
+
+.incubation-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  background: #f6f7f9;
+  animation: slideUp 180ms ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  display: grid;
+  grid-template-columns: 88rpx 1fr 88rpx;
+  align-items: center;
+  padding: 28rpx 24rpx 20rpx;
+  border-bottom: 1rpx solid #e5e7eb;
+  background: #ffffff;
+}
+
+.modal-title-wrap {
+  text-align: center;
+}
+
+.modal-title {
+  color: #111827;
+  font-size: 32rpx;
+  font-weight: 800;
+}
+
+.modal-stage {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 8rpx;
+  color: #0f766e;
+  font-size: 24rpx;
+}
+
+.modal-body {
+  flex: 1;
+  min-height: 0;
+  padding: 28rpx;
+  box-sizing: border-box;
+}
+
+.idea-edit-card,
+.question-card,
+.progress-card,
+.result-card {
+  padding: 28rpx;
+  border: 1rpx solid #e5e7eb;
+  border-radius: 16rpx;
+  background: #ffffff;
+}
+
+.idea-edit-card {
+  margin-bottom: 20rpx;
+}
+
+.idea-edit-title {
+  margin-bottom: 14rpx;
+  color: #111827;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.modal-idea-input {
+  min-height: 120rpx;
+}
+
+.question-title,
+.result-title {
+  color: #111827;
+  font-size: 34rpx;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.question-desc {
+  margin-top: 12rpx;
+  color: #6b7280;
+  font-size: 26rpx;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  margin-top: 26rpx;
+}
+
+.option-item {
+  min-height: 72rpx;
+  padding: 18rpx 22rpx;
+  box-sizing: border-box;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.custom-input {
+  margin-top: 24rpx;
+}
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  padding: 22rpx 0;
+}
+
+.progress-dot {
+  display: flex;
+  flex: 0 0 42rpx;
+  width: 42rpx;
+  height: 42rpx;
+  align-items: center;
+  justify-content: center;
+  border: 2rpx solid #d1d5db;
+  border-radius: 50%;
+  color: #ffffff;
+}
+
+.progress-dot.active {
+  border-color: #0f766e;
+  background: #ccfbf1;
+}
+
+.progress-dot.done {
+  border-color: #0f766e;
+  background: #0f766e;
+}
+
+.progress-text {
+  color: #111827;
+  font-size: 28rpx;
+  font-weight: 700;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.result-section {
+  margin-top: 28rpx;
+}
+
+.result-heading {
+  color: #111827;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.result-text,
+.product-text,
+.bullet-line,
+.risk-desc,
+.risk-source {
+  margin-top: 10rpx;
+  color: #4b5563;
+  font-size: 25rpx;
+  line-height: 1.6;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.product-row,
+.risk-row {
+  margin-top: 14rpx;
+  padding: 18rpx;
+  border-radius: 12rpx;
+  background: #f9fafb;
+}
+
+.product-name {
+  color: #111827;
+  font-size: 27rpx;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.risk-source {
+  color: #9a3412;
+}
+
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  padding: 18rpx 24rpx 34rpx;
+  border-top: 1rpx solid #e5e7eb;
+  background: #ffffff;
+}
+
+.secondary-button {
+  flex: 1 1 180rpx;
+  min-width: 0;
+}
+
+.action-primary {
+  flex: 1.4 1 220rpx;
+  min-width: 0;
+}

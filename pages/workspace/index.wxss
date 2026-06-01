@@ -1,1 +1,143 @@
+.workspace-page {
+  padding-bottom: 96rpx;
+}
 
+.project-card,
+.empty-wrap {
+  margin-top: 28rpx;
+  padding: 26rpx;
+  border: 1rpx solid #e5e7eb;
+  border-radius: 16rpx;
+  background: #ffffff;
+}
+
+.project-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18rpx;
+}
+
+.project-title,
+.detail-project-title {
+  min-width: 0;
+  color: #111827;
+  font-size: 30rpx;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.project-text,
+.detail-text,
+.product-text,
+.bullet-line,
+.risk-desc,
+.risk-source {
+  margin-top: 10rpx;
+  color: #4b5563;
+  font-size: 25rpx;
+  line-height: 1.6;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.entry-text {
+  color: #0f766e;
+}
+
+.project-meta {
+  margin-top: 12rpx;
+  color: #9ca3af;
+  font-size: 22rpx;
+  line-height: 1.5;
+}
+
+.project-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 20rpx;
+}
+
+.project-action {
+  flex: 1 1 150rpx;
+  min-width: 0;
+}
+
+.prd-action {
+  flex-basis: 180rpx;
+}
+
+.detail-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #f6f7f9;
+}
+
+.detail-header {
+  display: grid;
+  grid-template-columns: 88rpx 1fr 88rpx;
+  align-items: center;
+  padding: 28rpx 24rpx 20rpx;
+  border-bottom: 1rpx solid #e5e7eb;
+  background: #ffffff;
+}
+
+.detail-title {
+  color: #111827;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 800;
+}
+
+.detail-body {
+  flex: 1;
+  min-height: 0;
+  padding: 28rpx;
+  box-sizing: border-box;
+}
+
+.detail-card {
+  padding: 28rpx;
+  border: 1rpx solid #e5e7eb;
+  border-radius: 16rpx;
+  background: #ffffff;
+}
+
+.detail-project-title {
+  font-size: 34rpx;
+}
+
+.detail-section {
+  margin-top: 28rpx;
+}
+
+.detail-heading {
+  color: #111827;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.product-row,
+.risk-row {
+  margin-top: 14rpx;
+  padding: 18rpx;
+  border-radius: 12rpx;
+  background: #f9fafb;
+}
+
+.product-name {
+  color: #111827;
+  font-size: 27rpx;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.risk-source {
+  color: #9a3412;
+}

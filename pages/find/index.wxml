@@ -1,13 +1,183 @@
-<view class="page">
-  <view class="eyebrow">PROJECT MATCH</view>
-  <view class="title">找到适合你做的项目</view>
-  <view class="subtitle">根据技能栈、团队规模、预算和可投入时间，生成适合独立开发者的项目机会卡。</view>
+<view class="page find-page">
+  <view class="hero">
+    <view class="eyebrow">AI IDEA INCUBATION</view>
+    <view class="title">灵感孵化</view>
+    <view class="subtitle">输入一个项目想法，AI 会追问关键信息，并调研国内外产品，帮你找到可切入方向。</view>
+  </view>
 
-  <view class="panel">
-    <view class="panel-title">第一阶段功能</view>
-    <view class="panel-text">这里会整合画像问卷、AI 推荐和机会卡详情，作为小程序的主入口。</view>
-    <view class="pill-row">
-      <view wx:for="{{tags}}" wx:key="*this" class="pill">{{item}}</view>
+  <view class="idea-card">
+    <t-textarea
+      t-class="idea-input"
+      value="{{ideaInput}}"
+      placeholder="例如：我想做一个帮独立开发者找项目方向的小工具"
+      maxlength="300"
+      autosize="{{true}}"
+      indicator="{{true}}"
+      bind:change="onIdeaInput"
+    />
+    <t-button block theme="primary" size="large" disabled="{{!ideaInput}}" bind:tap="onStartIncubation">开始孵化</t-button>
+  </view>
+
+  <view class="section">
+    <view class="section-title">示例灵感</view>
+    <view class="example-grid">
+      <t-tag wx:for="{{examples}}" wx:key="*this" t-class="example-chip" theme="primary" variant="light" size="large" data-value="{{item}}" bind:click="onUseExample">
+        {{item}}
+      </t-tag>
     </view>
   </view>
+
+  <view class="section">
+    <view class="section-title">最近孵化</view>
+    <block wx:if="{{recentProjects.length}}">
+      <view wx:for="{{recentProjects}}" wx:key="id" class="recent-card">
+        <view class="recent-title">{{item.title}}</view>
+        <view class="recent-text">{{item.conclusion}}</view>
+        <view class="recent-meta">{{item.createdAtText}}</view>
+      </view>
+    </block>
+    <t-empty wx:else description="孵化完成的项目会保存到工作台。" />
+  </view>
+
+  <view class="ai-note">市场调研结果由 AI 生成，请结合真实数据进一步验证。</view>
 </view>
+
+<t-popup
+  visible="{{modalVisible}}"
+  placement="bottom"
+  close-on-overlay-click="{{false}}"
+  show-overlay="{{true}}"
+  custom-style="height: 100vh;"
+  t-class-content="incubation-modal"
+  bind:visible-change="onModalVisibleChange"
+>
+  <view class="modal-header">
+    <t-button shape="circle" theme="default" variant="text" bind:tap="onCloseModal">
+      <t-icon name="close" size="40rpx" />
+    </t-button>
+    <view class="modal-title-wrap">
+      <view class="modal-title">AI灵感孵化</view>
+      <view class="modal-stage">
+        <t-tag theme="primary" variant="light" size="small">AI</t-tag>
+        <text>{{stageText}}</text>
+      </view>
+    </view>
+    <view class="header-spacer"></view>
+  </view>
+
+  <scroll-view class="modal-body" scroll-y="true">
+    <block wx:if="{{modalStage === 'question' && currentQuestion}}">
+      <view class="idea-edit-card">
+        <view class="idea-edit-title">项目想法</view>
+        <t-textarea
+          t-class="modal-idea-input"
+          value="{{ideaInput}}"
+          placeholder="调整你的项目方向"
+          maxlength="300"
+          autosize="{{true}}"
+          indicator="{{true}}"
+          bind:change="onModalIdeaInput"
+        />
+      </view>
+      <view class="question-card">
+        <view class="question-title">{{currentQuestion.title}}</view>
+        <view class="question-desc">{{currentQuestion.description}}</view>
+        <view class="option-list">
+          <t-tag
+            wx:for="{{currentOptions}}"
+            wx:key="label"
+            t-class="option-item"
+            theme="{{item.selected ? 'primary' : 'default'}}"
+            variant="{{item.selected ? 'light' : 'outline'}}"
+            size="large"
+            data-value="{{item.label}}"
+            bind:click="onToggleOption"
+          >
+            {{item.label}}
+          </t-tag>
+        </view>
+        <t-textarea
+          wx:if="{{currentQuestion.allowCustomInput}}"
+          t-class="custom-input"
+          value="{{customInput}}"
+          placeholder="也可以补充你的具体情况"
+          autosize="{{true}}"
+          indicator="{{false}}"
+          bind:change="onCustomInput"
+        />
+      </view>
+    </block>
+
+    <block wx:if="{{modalStage === 'research'}}">
+      <view class="progress-card">
+        <view wx:for="{{researchStepItems}}" wx:key="label" class="progress-row">
+          <view class="progress-dot {{item.status}}">
+            <t-icon wx:if="{{item.status === 'done'}}" name="check" size="28rpx" />
+            <t-loading wx:if="{{item.status === 'active'}}" size="32rpx" theme="circular" />
+          </view>
+          <view class="progress-text">{{item.label}}</view>
+        </view>
+      </view>
+    </block>
+
+    <block wx:if="{{modalStage === 'result' && generatedProject}}">
+      <view class="result-card">
+        <view class="result-title">{{generatedProject.title}}</view>
+        <view class="result-section">
+          <view class="result-heading">方向结论</view>
+          <view class="result-text">{{generatedProject.conclusion}}</view>
+        </view>
+        <view class="result-section">
+          <view class="result-heading">国内产品</view>
+          <view wx:for="{{generatedProject.domesticProducts}}" wx:key="name" class="product-row">
+            <view class="product-name">{{item.name}}</view>
+            <view class="product-text">{{item.positioning}}</view>
+            <view class="product-text">优势：{{item.strengths}}</view>
+            <view class="product-text">短板：{{item.weaknesses}}</view>
+          </view>
+        </view>
+        <view class="result-section">
+          <view class="result-heading">国外产品</view>
+          <view wx:for="{{generatedProject.globalProducts}}" wx:key="name" class="product-row">
+            <view class="product-name">{{item.name}}</view>
+            <view class="product-text">{{item.positioning}}</view>
+            <view class="product-text">优势：{{item.strengths}}</view>
+            <view class="product-text">短板：{{item.weaknesses}}</view>
+          </view>
+        </view>
+        <view class="result-section">
+          <view class="result-heading">推荐切入方向和可切入优势</view>
+          <view class="result-text">{{generatedProject.entryDirection}}</view>
+          <view wx:for="{{generatedProject.advantages}}" wx:key="*this" class="bullet-line">{{item}}</view>
+        </view>
+        <view class="result-section">
+          <view class="result-heading">风险</view>
+          <view wx:for="{{generatedProject.risks}}" wx:key="description" class="risk-row">
+            <view class="risk-desc">{{item.description}}</view>
+            <view class="risk-source">来源：{{item.source}}</view>
+          </view>
+        </view>
+        <view class="result-section">
+          <view class="result-heading">建议</view>
+          <view wx:for="{{generatedProject.suggestions}}" wx:key="*this" class="bullet-line">{{item}}</view>
+        </view>
+      </view>
+    </block>
+  </scroll-view>
+
+  <view class="modal-actions">
+    <block wx:if="{{modalStage === 'question'}}">
+      <t-button t-class="secondary-button" theme="default" variant="outline" disabled="{{!canGoPrevious}}" bind:tap="onPreviousQuestion">上一步</t-button>
+      <t-button t-class="action-primary" theme="primary" bind:tap="onNextQuestion">
+        {{isLastQuestion ? '开始调研市场' : '下一步'}}
+      </t-button>
+    </block>
+    <block wx:if="{{modalStage === 'result'}}">
+      <t-button t-class="secondary-button" theme="default" variant="outline" bind:tap="onRegenerate">重新生成</t-button>
+      <t-button t-class="secondary-button" theme="default" variant="outline" bind:tap="onModifyDirection">修改方向</t-button>
+      <t-button t-class="action-primary" theme="primary" bind:tap="onConfirmDirection">确定方向</t-button>
+    </block>
+  </view>
+</t-popup>
+
+<t-toast id="t-toast" />
