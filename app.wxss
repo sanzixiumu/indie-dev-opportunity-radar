@@ -1,7 +1,25 @@
 page {
-  background: #f6f7f9;
-  color: #111827;
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --app-bg: #faf8ff;
+  --app-surface: #ffffff;
+  --app-surface-low: #f2f3ff;
+  --app-surface-container: #eaedff;
+  --app-surface-high: #e2e7ff;
+  --app-text: #131b2e;
+  --app-text-subtle: #464554;
+  --app-outline: #c7c4d7;
+  --app-primary: #4648d4;
+  --app-primary-container: #e1e0ff;
+  --app-primary-text: #2f2ebe;
+  --app-secondary: #0058be;
+  --app-secondary-container: #d8e2ff;
+  --app-tertiary: #904900;
+  --app-shadow: rgba(15, 23, 42, 0.05);
+  background: var(--app-bg);
+  color: var(--app-text);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --td-brand-color: var(--app-primary);
+  --td-primary-color-7: var(--app-primary);
+  --td-brand-color-active: #2f2ebe;
 }
 
 .page {
@@ -11,44 +29,45 @@ page {
 }
 
 .eyebrow {
-  color: #0f766e;
+  color: var(--app-primary);
   font-size: 24rpx;
-  font-weight: 600;
-  line-height: 1.4;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0.04em;
 }
 
 .title {
   margin-top: 14rpx;
-  color: #111827;
-  font-size: 44rpx;
-  font-weight: 700;
+  color: var(--app-text);
+  font-size: 48rpx;
+  font-weight: 800;
   line-height: 1.25;
 }
 
 .subtitle {
   margin-top: 18rpx;
-  color: #4b5563;
+  color: var(--app-text-subtle);
   font-size: 28rpx;
-  line-height: 1.7;
+  line-height: 1.6;
 }
 
 .panel {
   margin-top: 32rpx;
   padding: 28rpx;
-  border: 1rpx solid #e5e7eb;
+  border: 1rpx solid var(--app-outline);
   border-radius: 16rpx;
-  background: #ffffff;
+  background: var(--app-surface);
 }
 
 .panel-title {
-  color: #111827;
+  color: var(--app-text);
   font-size: 30rpx;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .panel-text {
   margin-top: 12rpx;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   font-size: 26rpx;
   line-height: 1.6;
 }
@@ -61,10 +80,12 @@ page {
 }
 
 .pill {
-  padding: 10rpx 18rpx;
-  border-radius: 999rpx;
-  background: #ecfdf5;
-  color: #047857;
+  padding: 8rpx 16rpx;
+  border: 1rpx solid var(--app-outline);
+  border-radius: 8rpx;
+  background: var(--app-surface-low);
+  color: var(--app-text);
   font-size: 24rpx;
-  line-height: 1.4;
+  font-weight: 600;
+  line-height: 1.35;
 }

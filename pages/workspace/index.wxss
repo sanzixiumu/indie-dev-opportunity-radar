@@ -1,14 +1,19 @@
 .workspace-page {
   padding-bottom: 96rpx;
+  background: #faf8ff;
+  --td-brand-color: #4648d4;
+  --td-primary-color-7: #4648d4;
+  --td-brand-color-active: #2f2ebe;
 }
 
 .project-card,
 .empty-wrap {
   margin-top: 28rpx;
-  padding: 26rpx;
-  border: 1rpx solid #e5e7eb;
+  padding: 28rpx;
+  border: 1rpx solid #c7c4d7;
   border-radius: 16rpx;
   background: #ffffff;
+  box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, 0.05);
 }
 
 .project-header {
@@ -21,7 +26,7 @@
 .project-title,
 .detail-project-title {
   min-width: 0;
-  color: #111827;
+  color: #131b2e;
   font-size: 30rpx;
   font-weight: 800;
   line-height: 1.35;
@@ -35,7 +40,7 @@
 .risk-desc,
 .risk-source {
   margin-top: 10rpx;
-  color: #4b5563;
+  color: #464554;
   font-size: 25rpx;
   line-height: 1.6;
   white-space: normal;
@@ -43,12 +48,13 @@
 }
 
 .entry-text {
-  color: #0f766e;
+  color: #0058be;
+  font-weight: 600;
 }
 
 .project-meta {
   margin-top: 12rpx;
-  color: #9ca3af;
+  color: #767586;
   font-size: 22rpx;
   line-height: 1.5;
 }
@@ -76,7 +82,10 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: #f6f7f9;
+  background: #faf8ff;
+  --td-brand-color: #4648d4;
+  --td-primary-color-7: #4648d4;
+  --td-brand-color-active: #2f2ebe;
 }
 
 .detail-header {
@@ -84,12 +93,12 @@
   grid-template-columns: 88rpx 1fr 88rpx;
   align-items: center;
   padding: 28rpx 24rpx 20rpx;
-  border-bottom: 1rpx solid #e5e7eb;
+  border-bottom: 1rpx solid #c7c4d7;
   background: #ffffff;
 }
 
 .detail-title {
-  color: #111827;
+  color: #131b2e;
   text-align: center;
   font-size: 32rpx;
   font-weight: 800;
@@ -104,7 +113,7 @@
 
 .detail-card {
   padding: 28rpx;
-  border: 1rpx solid #e5e7eb;
+  border: 1rpx solid #c7c4d7;
   border-radius: 16rpx;
   background: #ffffff;
 }
@@ -118,7 +127,7 @@
 }
 
 .detail-heading {
-  color: #111827;
+  color: #131b2e;
   font-size: 28rpx;
   font-weight: 800;
 }
@@ -128,16 +137,16 @@
   margin-top: 14rpx;
   padding: 18rpx;
   border-radius: 12rpx;
-  background: #f9fafb;
+  background: #f2f3ff;
 }
 
 .product-name {
-  color: #111827;
+  color: #131b2e;
   font-size: 27rpx;
   font-weight: 800;
   overflow-wrap: anywhere;
 }
 
 .risk-source {
-  color: #9a3412;
+  color: #904900;
 }
