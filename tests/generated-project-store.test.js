@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { createGeneratedProjectStore, createMemoryStorage } = require("../lib/generated-project-store");
+const { STORAGE_KEY, createGeneratedProjectStore, createMemoryStorage } = require("../lib/generated-project-store");
 
 function sampleProject(overrides = {}) {
   return {
@@ -33,6 +33,43 @@ test("saveProject stores projects newest first", () => {
   );
 });
 
+test("createGeneratedProjectStore uses memory fallback when no storage is provided", () => {
+  const store = createGeneratedProjectStore();
+
+  store.saveProject(sampleProject({ id: "project-1" }));
+
+  assert.deepEqual(
+    store.getProjects().map((project) => project.id),
+    ["project-1"]
+  );
+});
+
+test("createGeneratedProjectStore uses wx storage when no storage is provided", () => {
+  const originalWx = global.wx;
+  const storage = createMemoryStorage();
+
+  global.wx = storage;
+
+  try {
+    const store = createGeneratedProjectStore();
+    store.saveProject(sampleProject({ id: "project-1" }));
+
+    assert.deepEqual(storage.getStorageSync(STORAGE_KEY).map((project) => project.id), ["project-1"]);
+  } finally {
+    if (originalWx === undefined) {
+      delete global.wx;
+    } else {
+      global.wx = originalWx;
+    }
+  }
+});
+
+test("getProjects normalizes non-array storage values to an empty array", () => {
+  const store = createGeneratedProjectStore(createMemoryStorage({ [STORAGE_KEY]: "not-an-array" }));
+
+  assert.deepEqual(store.getProjects(), []);
+});
+
 test("saveProject replaces an existing project with the same id", () => {
   const store = createGeneratedProjectStore(createMemoryStorage());
 
@@ -42,6 +79,26 @@ test("saveProject replaces an existing project with the same id", () => {
   const projects = store.getProjects();
   assert.equal(projects.length, 1);
   assert.equal(projects[0].title, "新标题");
+});
+
+test("saveProject requires a project with an id", () => {
+  const store = createGeneratedProjectStore(createMemoryStorage());
+
+  assert.throws(() => store.saveProject(), /project\.id/);
+  assert.throws(() => store.saveProject({}), /project\.id/);
+  assert.throws(() => store.saveProject(Object.assign(sampleProject(), { id: "" })), /project\.id/);
+});
+
+test("saveProject sorts invalid createdAt values as oldest", () => {
+  const store = createGeneratedProjectStore(createMemoryStorage());
+
+  store.saveProject(sampleProject({ id: "valid", createdAt: "2026-06-01T00:00:00.000Z" }));
+  store.saveProject(sampleProject({ id: "invalid", createdAt: "not-a-date" }));
+
+  assert.deepEqual(
+    store.getProjects().map((project) => project.id),
+    ["valid", "invalid"]
+  );
 });
 
 test("toggleFavorite flips favoriteStatus", () => {
