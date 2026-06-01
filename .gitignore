@@ -8,6 +8,7 @@ pnpm-debug.log*
 bun.lockb
 
 # WeChat Mini Program
+miniprogram_npm/
 project.private.config.json
 miniprogram/miniprogram_npm/
 miniprogram/node_modules/
