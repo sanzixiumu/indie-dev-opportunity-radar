@@ -1,30 +1,45 @@
 <view class="page find-page">
   <view class="hero">
-    <view class="eyebrow">AI INCUBATION</view>
-    <view class="title">灵感孵化</view>
-    <view class="subtitle">输入一个项目想法，AI 会追问关键信息，并调研国内外产品，帮你找到可切入方向。</view>
+    <t-title t-class="hero-title" level="h1" content="灵感孵化" custom-style="margin: 0; text-align: center;" />
+    <t-text t-class="hero-subtitle" theme="secondary" content="输入一个项目想法，帮你找到可切入方向" custom-style="display: block;" />
   </view>
 
   <view wx:if="{{errorMessage && !modalVisible}}" class="error-card">{{errorMessage}}</view>
 
-  <view class="idea-card">
-    <t-textarea
-      t-class="idea-input"
-      value="{{ideaInput}}"
-      placeholder="例如：我想做一个帮独立开发者找项目方向的小工具"
-      maxlength="300"
-      autosize="{{ideaAutosize}}"
-      indicator="{{true}}"
-      bind:change="onIdeaInput"
-    />
-    <t-button block theme="primary" size="large" disabled="{{!ideaInput}}" bind:tap="onStartIncubation">开始孵化</t-button>
+  <view class="prompt-panel">
+    <view class="idea-card">
+      <t-chat-sender
+        class="idea-sender"
+        value="{{ideaInput}}"
+        placeholder="例如：做一个独立开发者找项目方向的小工具"
+        render-presets="{{ideaSenderPresets}}"
+        textarea-props="{{ideaSenderTextareaProps}}"
+        custom-style="margin: 0; border: 0; border-radius: 20rpx; box-shadow: none; background: transparent;"
+        bind:change="onIdeaInput"
+        bind:send="onStartIncubation"
+      />
+    </view>
+    <view class="ai-note-wrap">
+      <t-text t-class="ai-note" theme="secondary" content="内容由AI生成，仅供参考" custom-style="display: block;" />
+    </view>
   </view>
 
   <view class="section">
     <view class="section-title">示例灵感</view>
     <view class="example-grid">
-      <t-tag wx:for="{{examples}}" wx:key="*this" t-class="example-chip" theme="primary" variant="light" size="large" data-value="{{item}}" bind:click="onSelectExample">
-        {{item}}
+      <t-tag
+        wx:for="{{examples}}"
+        wx:key="*this"
+        t-class="example-chip"
+        theme="primary"
+        variant="light"
+        size="small"
+        max-width="100%"
+        custom-style="background: #ccfbf1; border-color: #ccfbf1; color: #0f766e;"
+        data-value="{{item}}"
+        bind:click="onUseExample"
+      >
+        <t-text t-class="example-text" content="{{item}}" ellipsis="{{true}}" custom-style="display: block; color: #0f766e; font-size: 28rpx; line-height: 28rpx; margin: 0;" />
       </t-tag>
     </view>
   </view>
@@ -42,10 +57,12 @@
         <view class="recent-meta">{{item.createdAtText}}</view>
       </view>
     </block>
-    <t-empty wx:else description="孵化完成的项目会保存到工作台。" />
+    <view wx:else class="empty-state">
+      <t-icon name="time" size="36rpx" color="#94a3b8" />
+      <t-text t-class="empty-text" theme="secondary" content="最近暂无孵化" custom-style="display: block;" />
+    </view>
   </view>
 
-  <view class="ai-note">市场调研结果由 AI 生成，请结合真实数据进一步验证。</view>
 </view>
 
 <t-popup

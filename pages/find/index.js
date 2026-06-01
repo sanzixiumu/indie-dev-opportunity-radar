@@ -134,6 +134,8 @@ Page({
     ideaAutosize: { minRows: 4, maxRows: 7 },
     customAutosize: { minRows: 2, maxRows: 4 },
     examples,
+    ideaSenderPresets: [{ name: "send", type: "icon" }],
+    ideaSenderTextareaProps: { autosize: { minHeight: 72, maxHeight: 180 } },
     recentProjects: [],
     modalVisible: false,
     stage: "idle",
@@ -221,8 +223,12 @@ Page({
     this.onSelectExample(event);
   },
 
-  async onStartIncubation() {
-    const idea = this.data.ideaInput.trim();
+  async onStartIncubation(event) {
+    const nextIdea =
+      event && event.detail && typeof event.detail.value === "string"
+        ? event.detail.value.trimStart()
+        : this.data.ideaInput;
+    const idea = nextIdea.trim();
 
     if (!idea) {
       showToast({
@@ -259,6 +265,10 @@ Page({
       });
       return;
     }
+
+    this.setData({
+      ideaInput: nextIdea,
+    });
 
     await this.generateIncubationQuestions(idea, { showModal: true });
   },
