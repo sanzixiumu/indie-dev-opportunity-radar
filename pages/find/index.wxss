@@ -259,6 +259,7 @@
 
 .modal-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 16rpx;
   padding: 18rpx 24rpx 34rpx;
   border-top: 1rpx solid #e5e7eb;
@@ -266,11 +267,11 @@
 }
 
 .secondary-button {
-  flex: 1;
+  flex: 1 1 180rpx;
   min-width: 0;
 }
 
 .action-primary {
-  flex: 1.4;
+  flex: 1.4 1 220rpx;
   min-width: 0;
 }

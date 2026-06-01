@@ -36,6 +36,10 @@ function isLastQuestion(session) {
   return Boolean(session) && session.currentQuestionIndex === session.questions.length - 1;
 }
 
+function canGoPrevious(session) {
+  return Boolean(session) && session.currentQuestionIndex > 0;
+}
+
 Page({
   data: {
     ideaInput: "",
@@ -56,6 +60,7 @@ Page({
     customInput: "",
     canStartResearch: false,
     isLastQuestion: false,
+    canGoPrevious: false,
     researchSteps,
     activeResearchStep: 0,
     completedResearchSteps: [],
@@ -65,6 +70,8 @@ Page({
 
   onLoad() {
     this.projectStore = createGeneratedProjectStore();
+    this.researchTimer = null;
+    this.researchRunId = 0;
     this.refreshRecentProjects();
   },
 
@@ -99,6 +106,8 @@ Page({
       return;
     }
 
+    this.stopResearchProgress();
+
     const session = createIncubationSession(idea);
     const currentQuestion = getCurrentQuestion(session);
 
@@ -113,6 +122,7 @@ Page({
       customInput: "",
       canStartResearch: canStartResearch(session),
       isLastQuestion: isLastQuestion(session),
+      canGoPrevious: canGoPrevious(session),
       activeResearchStep: 0,
       completedResearchSteps: [],
       researchStepItems: createResearchStepItems(0, []),
@@ -132,12 +142,17 @@ Page({
   },
 
   onCloseModal() {
+    this.stopResearchProgress();
     this.setData({
       modalVisible: false
     });
   },
 
   onModalVisibleChange(event) {
+    if (!event.detail.visible) {
+      this.stopResearchProgress();
+    }
+
     this.setData({
       modalVisible: event.detail.visible
     });
@@ -181,6 +196,10 @@ Page({
   },
 
   onPreviousQuestion() {
+    if (!this.data.canGoPrevious) {
+      return;
+    }
+
     const previousSession = goToPreviousQuestion(this.data.session);
     const currentQuestion = getCurrentQuestion(previousSession);
 
@@ -191,7 +210,8 @@ Page({
       currentOptions: this.createOptionItems(currentQuestion, []),
       customInput: "",
       canStartResearch: canStartResearch(previousSession),
-      isLastQuestion: isLastQuestion(previousSession)
+      isLastQuestion: isLastQuestion(previousSession),
+      canGoPrevious: canGoPrevious(previousSession)
     });
   },
 
@@ -213,7 +233,8 @@ Page({
         selectedOptions: [],
         customInput: "",
         canStartResearch: true,
-        isLastQuestion: false
+        isLastQuestion: false,
+        canGoPrevious: canGoPrevious(nextSession)
       });
       this.startResearchProgress();
       return;
@@ -228,11 +249,16 @@ Page({
       currentOptions: this.createOptionItems(nextQuestion, []),
       customInput: "",
       canStartResearch: canStartResearch(nextSession),
-      isLastQuestion: isLastQuestion(nextSession)
+      isLastQuestion: isLastQuestion(nextSession),
+      canGoPrevious: canGoPrevious(nextSession)
     });
   },
 
   startResearchProgress() {
+    this.stopResearchProgress();
+    this.researchRunId += 1;
+    const runId = this.researchRunId;
+
     this.setData({
       modalStage: "research",
       stageText: "正在调研市场",
@@ -241,12 +267,17 @@ Page({
       researchStepItems: createResearchStepItems(0, [])
     });
 
-    this.runResearchStep(0);
+    this.runResearchStep(0, runId);
   },
 
-  runResearchStep(stepIndex) {
+  runResearchStep(stepIndex, runId) {
+    if (runId !== this.researchRunId || !this.data.modalVisible) {
+      return;
+    }
+
     if (stepIndex >= this.data.researchSteps.length) {
       const generatedProject = generateProjectResult(this.data.session);
+      this.researchTimer = null;
       this.setData({
         modalStage: "result",
         stageText: "已生成方向建议",
@@ -260,14 +291,27 @@ Page({
       researchStepItems: createResearchStepItems(stepIndex, this.data.completedResearchSteps)
     });
 
-    setTimeout(() => {
+    this.researchTimer = setTimeout(() => {
+      if (runId !== this.researchRunId || !this.data.modalVisible) {
+        return;
+      }
+
       const completedResearchSteps = this.data.completedResearchSteps.concat(stepIndex);
       this.setData({
         completedResearchSteps,
         researchStepItems: createResearchStepItems(stepIndex, completedResearchSteps)
       });
-      this.runResearchStep(stepIndex + 1);
+      this.runResearchStep(stepIndex + 1, runId);
     }, 650);
+  },
+
+  stopResearchProgress() {
+    this.researchRunId += 1;
+
+    if (this.researchTimer) {
+      clearTimeout(this.researchTimer);
+      this.researchTimer = null;
+    }
   },
 
   onRegenerate() {
@@ -290,12 +334,26 @@ Page({
       customInput: "",
       canStartResearch: canStartResearch(editableSession),
       isLastQuestion: isLastQuestion(editableSession),
+      canGoPrevious: canGoPrevious(editableSession),
       generatedProject: null
     });
   },
 
   onConfirmDirection() {
-    this.projectStore.saveProject(this.data.generatedProject);
+    const generatedProject = this.data.generatedProject;
+
+    if (!generatedProject) {
+      showToast({ context: this, selector: "#t-toast", message: "暂无可保存的方向", theme: "warning" });
+      return;
+    }
+
+    try {
+      this.projectStore.saveProject(generatedProject);
+    } catch (error) {
+      showToast({ context: this, selector: "#t-toast", message: "保存失败，请稍后重试", theme: "error" });
+      return;
+    }
+
     this.setData({
       modalVisible: false,
       generatedProject: null
@@ -311,5 +369,9 @@ Page({
         this.refreshRecentProjects();
       }
     });
+  },
+
+  onUnload() {
+    this.stopResearchProgress();
   }
 });
