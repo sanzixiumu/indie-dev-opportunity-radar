@@ -1,0 +1,30 @@
+.DS_Store
+.worktrees/
+node_modules/
+.env
+.env.local
+.env.*.local
+pnpm-debug.log*
+bun.lockb
+
+# WeChat Mini Program
+project.private.config.json
+miniprogram/miniprogram_npm/
+miniprogram/node_modules/
+miniprogram/.env
+
+# Cloud functions
+cloudfunctions/**/node_modules/
+cloudfunctions/**/.env
+
+# Build and local output
+dist/
+build/
+coverage/
+.cache/
+
+# Secrets and private certificates
+*.pem
+*.key
+*.p12
+private/

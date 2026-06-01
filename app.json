@@ -1,0 +1,46 @@
+{
+  "pages": [
+    "pages/find/index",
+    "pages/rankings/index",
+    "pages/radar/index",
+    "pages/workspace/index",
+    "pages/profile/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "项目机会雷达",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f6f7f9",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#6b7280",
+    "selectedColor": "#0f766e",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/find/index",
+        "text": "找项目"
+      },
+      {
+        "pagePath": "pages/rankings/index",
+        "text": "机会榜"
+      },
+      {
+        "pagePath": "pages/radar/index",
+        "text": "市场雷达"
+      },
+      {
+        "pagePath": "pages/workspace/index",
+        "text": "工作台"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2"
+}

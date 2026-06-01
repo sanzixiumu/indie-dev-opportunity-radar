@@ -1,0 +1,13 @@
+<view class="page">
+  <view class="eyebrow">MARKET RADAR</view>
+  <view class="title">用市场信号验证项目机会</view>
+  <view class="subtitle">观察 App、小程序和海外平台动态，把竞品变化转化成独立开发者能切入的方向。</view>
+
+  <view class="panel">
+    <view class="panel-title">首批平台</view>
+    <view class="panel-text">MVP 阶段采用人工精选和半自动更新，不做全平台实时抓取。</view>
+    <view class="pill-row">
+      <view wx:for="{{tags}}" wx:key="*this" class="pill">{{item}}</view>
+    </view>
+  </view>
+</view>

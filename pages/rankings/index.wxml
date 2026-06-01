@@ -1,0 +1,13 @@
+<view class="page">
+  <view class="eyebrow">OPPORTUNITY RANKING</view>
+  <view class="title">每周独立开发机会榜</view>
+  <view class="subtitle">用榜单持续提供项目灵感，并把内容流量导向项目推荐和工作台。</view>
+
+  <view class="panel">
+    <view class="panel-title">榜单方向</view>
+    <view class="panel-text">优先覆盖适合一人开发、低预算、可快速验证的小项目方向。</view>
+    <view class="pill-row">
+      <view wx:for="{{tags}}" wx:key="*this" class="pill">{{item}}</view>
+    </view>
+  </view>
+</view>

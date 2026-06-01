@@ -1,0 +1,13 @@
+<view class="page">
+  <view class="eyebrow">PROFILE</view>
+  <view class="title">沉淀你的项目资产</view>
+  <view class="subtitle">收藏、历史生成内容、个人画像和会员权益都会集中放在这里。</view>
+
+  <view class="panel">
+    <view class="panel-title">个人中心</view>
+    <view class="panel-text">后续会接入微信身份、收藏记录、额度和付费状态。</view>
+    <view class="pill-row">
+      <view wx:for="{{tags}}" wx:key="*this" class="pill">{{item}}</view>
+    </view>
+  </view>
+</view>

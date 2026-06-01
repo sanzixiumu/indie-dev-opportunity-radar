@@ -1,0 +1,13 @@
+<view class="page">
+  <view class="eyebrow">WORKSPACE</view>
+  <view class="title">把想法变成可执行方案</view>
+  <view class="subtitle">在这里生成 PRD、MVP 清单、项目对比报告和冷启动验证计划。</view>
+
+  <view class="panel">
+    <view class="panel-title">主要转化功能</view>
+    <view class="panel-text">工作台会承接从机会卡发起的生成、对比和导出操作。</view>
+    <view class="pill-row">
+      <view wx:for="{{tags}}" wx:key="*this" class="pill">{{item}}</view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,15 @@
+{
+  "name": "indie-dev-opportunity-radar",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.14.0",
+  "scripts": {
+    "cloudbase:version": "bunx @cloudbase/cli --version",
+    "mcp:status": "bunx mcporter call cloudbase.auth action=status --output json",
+    "mcp:envs": "bunx mcporter call cloudbase.envQuery action=list --output json",
+    "mcp:describe": "bunx mcporter describe cloudbase --all-parameters"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2"
+  }
+}

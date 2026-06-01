@@ -1,0 +1,13 @@
+<view class="page">
+  <view class="eyebrow">PROJECT MATCH</view>
+  <view class="title">找到适合你做的项目</view>
+  <view class="subtitle">根据技能栈、团队规模、预算和可投入时间，生成适合独立开发者的项目机会卡。</view>
+
+  <view class="panel">
+    <view class="panel-title">第一阶段功能</view>
+    <view class="panel-text">这里会整合画像问卷、AI 推荐和机会卡详情，作为小程序的主入口。</view>
+    <view class="pill-row">
+      <view wx:for="{{tags}}" wx:key="*this" class="pill">{{item}}</view>
+    </view>
+  </view>
+</view>
