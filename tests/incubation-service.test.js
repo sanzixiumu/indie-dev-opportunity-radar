@@ -81,6 +81,19 @@ test("answerCurrentQuestion copies existing answers into the next session", () =
   assert.equal(nextSession.answers[0].customInput, "先服务内容创作者");
 });
 
+test("answerCurrentQuestion copies questions into the next session", () => {
+  const session = createIncubationSession("我想做一个 AI 选题工具");
+  const firstQuestion = getCurrentQuestion(session);
+
+  const nextSession = answerCurrentQuestion(session, {
+    selectedOptions: [firstQuestion.options[0]],
+    customInput: "先服务内容创作者"
+  });
+  nextSession.questions[0].options.push("后来修改的问题选项");
+
+  assert.equal(session.questions[0].options.includes("后来修改的问题选项"), false);
+});
+
 test("goToPreviousQuestion removes the last answer and moves index back", () => {
   let session = createIncubationSession("我想做一个项目 PRD 生成工具");
   const firstQuestion = getCurrentQuestion(session);
@@ -114,6 +127,25 @@ test("goToPreviousQuestion copies remaining answers", () => {
 
   assert.deepEqual(session.answers[0].selectedOptions, [firstQuestion.options[0]]);
   assert.equal(session.answers[0].customInput, "先服务小团队");
+});
+
+test("goToPreviousQuestion copies questions into the previous session", () => {
+  let session = createIncubationSession("我想做一个项目 PRD 生成工具");
+  const firstQuestion = getCurrentQuestion(session);
+  session = answerCurrentQuestion(session, {
+    selectedOptions: [firstQuestion.options[0]],
+    customInput: "先服务小团队"
+  });
+  const secondQuestion = getCurrentQuestion(session);
+  session = answerCurrentQuestion(session, {
+    selectedOptions: [secondQuestion.options[0]],
+    customInput: "提升转化"
+  });
+
+  const previousSession = goToPreviousQuestion(session);
+  previousSession.questions[0].options.push("后来修改的问题选项");
+
+  assert.equal(session.questions[0].options.includes("后来修改的问题选项"), false);
 });
 
 test("getCurrentQuestion returns a copy of the stored question", () => {
