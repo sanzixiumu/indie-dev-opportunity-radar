@@ -157,7 +157,7 @@
     <block wx:if="{{modalStage === 'question'}}">
       <t-button t-class="secondary-button" theme="default" variant="outline" bind:click="onPreviousQuestion">上一步</t-button>
       <t-button t-class="action-primary" theme="primary" bind:click="onNextQuestion">
-        {{canStartResearch ? '开始调研市场' : '下一步'}}
+        {{isLastQuestion ? '开始调研市场' : '下一步'}}
       </t-button>
     </block>
     <block wx:if="{{modalStage === 'result'}}">

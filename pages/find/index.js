@@ -32,6 +32,10 @@ function hasAnswer(selectedOptions, customInput) {
   return selectedOptions.length > 0 || Boolean(customInput.trim());
 }
 
+function isLastQuestion(session) {
+  return Boolean(session) && session.currentQuestionIndex === session.questions.length - 1;
+}
+
 Page({
   data: {
     ideaInput: "",
@@ -51,6 +55,7 @@ Page({
     currentOptions: [],
     customInput: "",
     canStartResearch: false,
+    isLastQuestion: false,
     researchSteps,
     activeResearchStep: 0,
     completedResearchSteps: [],
@@ -107,6 +112,7 @@ Page({
       currentOptions: this.createOptionItems(currentQuestion, []),
       customInput: "",
       canStartResearch: canStartResearch(session),
+      isLastQuestion: isLastQuestion(session),
       activeResearchStep: 0,
       completedResearchSteps: [],
       researchStepItems: createResearchStepItems(0, []),
@@ -184,28 +190,36 @@ Page({
       selectedOptions: [],
       currentOptions: this.createOptionItems(currentQuestion, []),
       customInput: "",
-      canStartResearch: canStartResearch(previousSession)
+      canStartResearch: canStartResearch(previousSession),
+      isLastQuestion: isLastQuestion(previousSession)
     });
   },
 
   onNextQuestion() {
-    if (this.data.canStartResearch) {
-      this.startResearchProgress();
-      return;
-    }
-
     if (!hasAnswer(this.data.selectedOptions, this.data.customInput)) {
       showToast({ context: this, selector: "#t-toast", message: "请选择或补充一点信息", theme: "warning" });
       return;
     }
 
-    const currentQuestion = this.data.currentQuestion;
+    const answeredLastQuestion = this.data.isLastQuestion;
     const nextSession = answerCurrentQuestion(this.data.session, {
       selectedOptions: this.data.selectedOptions,
       customInput: this.data.customInput.trim()
     });
-    const nextCanStartResearch = canStartResearch(nextSession);
-    const nextQuestion = nextCanStartResearch ? currentQuestion : getCurrentQuestion(nextSession);
+
+    if (answeredLastQuestion) {
+      this.setData({
+        session: nextSession,
+        selectedOptions: [],
+        customInput: "",
+        canStartResearch: true,
+        isLastQuestion: false
+      });
+      this.startResearchProgress();
+      return;
+    }
+
+    const nextQuestion = getCurrentQuestion(nextSession);
 
     this.setData({
       session: nextSession,
@@ -213,7 +227,8 @@ Page({
       selectedOptions: [],
       currentOptions: this.createOptionItems(nextQuestion, []),
       customInput: "",
-      canStartResearch: nextCanStartResearch
+      canStartResearch: canStartResearch(nextSession),
+      isLastQuestion: isLastQuestion(nextSession)
     });
   },
 
@@ -274,6 +289,7 @@ Page({
       currentOptions: this.createOptionItems(currentQuestion, []),
       customInput: "",
       canStartResearch: canStartResearch(editableSession),
+      isLastQuestion: isLastQuestion(editableSession),
       generatedProject: null
     });
   },
